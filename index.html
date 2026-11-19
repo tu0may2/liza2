@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Найм — база кандидатов</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400..700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<script>
+/* ====== НАСТРОЙКА ======
+   Вставь сюда данные проекта Supabase (Project Settings → API).
+   Если оставить пустыми — приложение работает в демо-режиме: данные хранятся только в этом браузере. */
+window.APP_CONFIG = {
+  SUPABASE_URL: "https://fktghbhmjtnuszrscfai.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable_0w811b28l_iOXm__ZSCt4Q_dbjSrPt3",
+  COMPANY: "Найм"
+};
+</script>
+<style>
+:root{
+  --black:#000;--orange:#FF5B00;--orange-h:#E64F00;--orange-soft:#FFF0E6;--orange-ink:#C24400;
+  --page:#F4F4F4;--panel:#FFFFFF;--ink:#141414;--muted:#767676;--faint:#A3A3A3;--line:#E6E6E6;--line2:#D4D4D4;--soft:#F7F7F7;
+  --red:#D92D20;--red-soft:#FDECEA;--ok:#12805C;
+  --side:232px;--r-s:6px;--r:10px;
+  --side-bg:#000;--side-ink:#9A9A9A;--side-hi:#FFFFFF;--side-line:#1F1F1F;--side-hover:#141414;
+  color-scheme:light;
+}
+[data-theme=dark]{
+  --page:#000;--panel:#121212;--ink:#F2F2F2;--muted:#9B9B9B;--faint:#6B6B6B;--line:#242424;--line2:#333;--soft:#1A1A1A;
+  --orange-soft:#2A1608;--orange-ink:#FF8A47;--red-soft:#2C1210;
+  --side-bg:#0A0A0A;--side-line:#1C1C1C;--side-hover:#161616;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:Onest,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--page);color:var(--ink);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased;font-feature-settings:"tnum" 1}
+button,input,select,textarea{font:inherit;color:inherit}
+::selection{background:var(--orange);color:#fff}
+.ic{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px}
+.ic.lg{width:20px;height:20px}
+input,select,textarea{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-s);padding:8px 10px;width:100%;transition:border-color .12s}
+input:hover,select:hover,textarea:hover{border-color:var(--line2)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ink)}
+input::placeholder,textarea::placeholder{color:var(--faint)}
+textarea{resize:vertical}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none' stroke='%23888' stroke-width='1.5'%3E%3Cpath d='M1 1l4 4 4-4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+button{cursor:pointer;border:1px solid var(--line);background:var(--panel);border-radius:var(--r-s);padding:8px 14px;white-space:nowrap;display:inline-flex;align-items:center;gap:7px;font-weight:500;transition:border-color .12s,background .12s}
+button:hover{border-color:var(--ink)}
+button:focus-visible,a:focus-visible,input[type=checkbox]:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+.btn-p{background:var(--orange);border-color:var(--orange);color:#fff}
+.btn-p:hover{background:var(--orange-h);border-color:var(--orange-h)}
+.btn-g{border-color:transparent;background:transparent;padding:6px}
+.btn-g:hover{background:var(--soft);border-color:transparent}
+.btn-d{color:var(--red)}
+.btn-d:hover{border-color:var(--red)}
+.btn-s{padding:5px 10px;font-size:13px}
+a{color:var(--ink);text-decoration-color:var(--line2);text-underline-offset:3px}
+a:hover{color:var(--orange-ink);text-decoration-color:currentColor}
+.muted{color:var(--muted)}
+.hidden{display:none!important}
+kbd{font:inherit;font-size:11px;border:1px solid var(--side-line);border-radius:4px;padding:0 5px;color:var(--side-ink)}
+
+/* layout */
+#app{display:flex;min-height:100vh}
+aside{width:var(--side);background:var(--side-bg);color:var(--side-ink);display:flex;flex-direction:column;position:fixed;top:0;bottom:0;left:0;z-index:10}
+.logo{padding:22px 20px 26px;font-weight:700;font-size:16px;color:var(--side-hi);display:flex;gap:10px;align-items:center;letter-spacing:-.01em}
+.logo i{width:24px;height:24px;border-radius:5px;background:var(--orange);display:grid;place-items:center;color:#000}
+.logo i svg{width:14px;height:14px;stroke-width:2.4}
+nav{display:flex;flex-direction:column;gap:2px;padding:0 10px}
+nav a{display:flex;align-items:center;gap:11px;padding:9px 10px;color:var(--side-ink);text-decoration:none;border-radius:var(--r-s);position:relative;font-weight:500}
+nav a:hover{background:var(--side-hover);color:var(--side-hi)}
+nav a.on{color:var(--side-hi);background:var(--side-hover)}
+nav a.on::before{content:"";position:absolute;left:-10px;top:8px;bottom:8px;width:2px;background:var(--orange);border-radius:2px}
+nav a.on .ic{color:var(--orange)}
+nav a b{margin-left:auto;font-weight:500;font-size:12px;color:#5C5C5C}
+.side-foot{margin-top:auto;padding:14px 20px 18px;font-size:12px;border-top:1px solid var(--side-line);display:flex;flex-direction:column;gap:10px}
+.side-foot .who{color:var(--side-hi);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.side-foot .row{display:flex;gap:6px}
+.side-foot button{background:transparent;border-color:var(--side-line);color:var(--side-ink);padding:6px 10px;font-size:12px}
+.side-foot button:hover{border-color:#444;color:var(--side-hi)}
+.mode{display:inline-block;background:var(--orange);color:#000;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700;margin-right:6px}
+main{margin-left:var(--side);flex:1;min-width:0;display:flex;flex-direction:column}
+.top{background:var(--panel);border-bottom:1px solid var(--line);padding:0 28px;height:64px;display:flex;align-items:center;gap:8px;position:sticky;top:0;z-index:5}
+.top h1{font-size:18px;font-weight:650;margin:0;margin-right:auto;display:flex;align-items:center;gap:10px;letter-spacing:-.015em;min-width:0}
+.crumb{color:var(--muted);text-decoration:none;font-weight:500}
+.crumb:hover{color:var(--ink)}
+.content{padding:24px 28px 48px}
+
+/* chips & tags */
+.chip{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px 2px 8px;font-size:12px;font-weight:500;color:var(--muted);border:1px solid var(--line);background:var(--panel)}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.chip.open{color:var(--orange-ink);border-color:transparent;background:var(--orange-soft)}
+.chip.paused{color:var(--muted)}
+.chip.closed{color:var(--faint);background:var(--soft);border-color:transparent}
+.chip.rej{color:var(--red);background:var(--red-soft);border-color:transparent}
+.tag{display:inline-block;border:1px solid var(--orange);color:var(--orange-ink);border-radius:4px;padding:0 6px;font-size:11.5px;margin:0 3px 3px 0;line-height:18px}
+.skill{display:inline-block;background:var(--soft);border-radius:4px;padding:0 6px;font-size:11.5px;margin:0 3px 3px 0;line-height:18px;color:var(--muted)}
+.stars{color:var(--orange);letter-spacing:1px;white-space:nowrap;font-size:12px}
+.stars span{color:var(--line2)}
+
+/* toolbar */
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+.search{position:relative;flex:0 1 340px}
+.search .ic{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--faint)}
+.search input{padding-left:32px}
+.toolbar select{width:auto}
+.seg{display:inline-flex;gap:2px;background:var(--soft);border-radius:8px;padding:3px}
+.seg button{border:0;border-radius:6px;padding:6px 12px;background:transparent;color:var(--muted)}
+.seg button:hover{color:var(--ink)}
+.seg button.on{background:var(--panel);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+.seg button span{color:var(--faint);font-weight:400}
+
+/* vacancies */
+.vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
+.vcard{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px 18px;cursor:pointer;display:flex;flex-direction:column;gap:12px;position:relative;min-width:0}
+.vhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;min-height:42px}
+.vhead .chip{flex:none;white-space:nowrap;margin-top:1px}
+.vhead h3{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:21px;min-width:0}
+.vmeta{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:18px;height:18px}
+.vcard .vbar{margin-top:auto}
+.vcard:hover{border-color:var(--ink)}
+.vcard:hover h3{color:var(--orange-ink)}
+.vcard h3{margin:0;font-size:16px;font-weight:600;letter-spacing:-.01em}
+.vbar{display:flex;height:4px;border-radius:2px;overflow:hidden;background:var(--soft);gap:2px}
+.vbar i{display:block;height:100%}
+.vstat{display:grid;grid-template-columns:repeat(4,auto);justify-content:space-between;gap:12px;font-size:12px;color:var(--muted)}
+.vstat>div{white-space:nowrap}
+.vsub{display:flex;align-items:center;gap:12px;min-width:0}
+.vsub .vmeta{flex:1;min-width:0}
+.vage{flex:none;display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--faint)}
+.vage .ic{width:13px;height:13px}
+.vstat .vdays b{color:var(--muted);font-weight:500}
+.vstat b{color:var(--ink);font-size:20px;font-weight:600;display:block;line-height:1.2}
+.vstat .hot b{color:var(--orange)}
+
+/* board */
+.board{display:flex;gap:14px;overflow-x:auto;padding-bottom:14px;align-items:flex-start;min-height:calc(100vh - 160px)}
+.col{flex:0 0 268px;display:flex;flex-direction:column;max-height:calc(100vh - 160px)}
+.col-h{padding:10px 2px 10px;font-weight:600;font-size:13px;display:flex;justify-content:space-between;align-items:baseline;border-top:3px solid var(--line2);margin-bottom:8px}
+.col-h .cnt{font-size:20px;font-weight:600;color:var(--ink);line-height:1}
+.col-h .nm{color:var(--ink)}
+.col.rej .col-h{border-top-style:dashed;border-top-color:var(--faint)}
+.col.rej .col-h .nm,.col.rej .col-h .cnt{color:var(--muted)}
+.col-b{overflow-y:auto;flex:1;min-height:80px;display:flex;flex-direction:column;gap:8px;border-radius:var(--r);padding:2px}
+.col.over .col-b{background:var(--orange-soft);outline:1.5px dashed var(--orange);outline-offset:-1px}
+.kc{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;cursor:grab;display:flex;flex-direction:column;gap:6px}
+.kc:hover{border-color:var(--ink)}
+.kc.drag{opacity:.35}
+.kc .hd{display:flex;gap:9px;align-items:center}
+.kc .n{font-weight:600;line-height:1.25}
+.kc .p{font-size:12.5px;color:var(--muted)}
+.kc .f{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);margin-top:2px}
+.kc .f .d{display:inline-flex;align-items:center;gap:4px}
+.kc .f .d.late{color:var(--orange-ink);font-weight:600}
+.kc .rr{font-size:12px;color:var(--red)}
+.col-empty{border:1px dashed var(--line2);border-radius:8px;color:var(--faint);font-size:12px;text-align:center;padding:18px 8px}
+
+/* avatars */
+.ava{width:44px;height:44px;border-radius:50%;background:var(--ink);color:var(--panel);display:grid;place-items:center;font-weight:600;font-size:15px;flex:none;letter-spacing:.02em}
+.ava.sm{width:28px;height:28px;font-size:11px}
+
+/* table */
+.tblwrap{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:var(--r)}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{text-align:left;font-size:12px;font-weight:500;color:var(--muted);padding:11px 14px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
+.tbl th:hover{color:var(--ink)}
+.tbl th.on{color:var(--ink)}
+.tbl th .ic{width:12px;height:12px;color:var(--orange)}
+.tbl td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tbody tr{cursor:pointer}
+.tbl tbody tr:hover td{background:var(--soft)}
+.tbl tbody tr:hover .n{color:var(--orange-ink)}
+.tbl .n{font-weight:600}
+.who-cell{display:flex;gap:11px}
+
+/* drawer */
+.ovl{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:30;opacity:0;pointer-events:none;transition:opacity .2s}
+.ovl.open{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(740px,100%);background:var(--panel);z-index:31;transform:translateX(100%);transition:transform .22s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;border-left:1px solid var(--line)}
+.drawer.open{transform:none}
+.dh{padding:22px 26px 0;border-bottom:1px solid var(--line)}
+.dh-top{display:flex;gap:14px;align-items:flex-start}
+.dh h2{margin:0;font-size:20px;font-weight:650;letter-spacing:-.015em}
+.dh .sub{color:var(--muted);font-size:13px;margin-top:3px}
+.contacts{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:13px;align-items:center}
+.contacts a{display:inline-flex;gap:5px;align-items:center;text-decoration:none;color:var(--ink)}
+.contacts a .ic{color:var(--faint)}
+.contacts a:hover{color:var(--orange-ink)}
+.contacts a:hover .ic{color:var(--orange)}
+.apps{display:flex;flex-direction:column;gap:6px;margin:16px 0 4px}
+.app-row{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:8px;padding:6px 6px 6px 12px;font-size:13px}
+.app-row .t{font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:8px}
+.app-row .t .ic{color:var(--orange)}
+.app-row select{width:auto;padding:5px 26px 5px 9px;font-size:13px}
+.tabs{display:flex;gap:20px;margin-top:12px}
+.tabs button{border:0;border-bottom:2px solid transparent;border-radius:0;padding:10px 0 11px;color:var(--muted);background:none}
+.tabs button:hover{color:var(--ink)}
+.tabs button.on{color:var(--ink);border-bottom-color:var(--orange)}
+.tabs button span{color:var(--faint);font-weight:400}
+.db{flex:1;overflow-y:auto;padding:22px 26px 34px}
+.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px 12px}
+.fl{display:flex;flex-direction:column;gap:5px}
+.fl label{font-size:12px;color:var(--muted)}
+.c2{grid-column:span 2}.c3{grid-column:span 3}.c4{grid-column:span 4}.c6{grid-column:span 6}
+.sec{grid-column:span 6;font-size:13px;font-weight:600;padding-top:14px;border-top:1px solid var(--line);margin-top:6px}
+.sec:first-child{border-top:0;padding-top:0;margin-top:0}
+.rate{display:flex;gap:1px;height:37px;align-items:center}
+.rate button{border:0;background:none;padding:0 2px;font-size:21px;color:var(--line2);line-height:1}
+.rate button.on{color:var(--orange)}
+.rate button:hover{color:var(--orange-h)}
+.filled{background:var(--orange-soft)!important;border-color:var(--orange)!important}
+.savebar{display:flex;justify-content:space-between;align-items:center;margin-top:20px;gap:8px}
+
+/* timeline */
+.cbox{display:flex;flex-direction:column;gap:8px;margin-bottom:22px}
+.tl{position:relative}
+.tl::before{content:"";position:absolute;left:14px;top:14px;bottom:14px;width:1px;background:var(--line)}
+.ev{display:flex;gap:14px;padding:9px 0;position:relative}
+.ev .ic-w{width:29px;height:29px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--panel);border:1px solid var(--line);color:var(--muted)}
+.ev .ic-w .ic{width:14px;height:14px}
+.ev .ic-w.stage{border-color:var(--orange);color:var(--orange)}
+.ev .ic-w.comment{background:var(--ink);border-color:var(--ink);color:var(--panel)}
+.ev .ic-w.reject{border-color:var(--red);color:var(--red)}
+.ev .w{flex:1;min-width:0;padding-top:4px}
+.ev .h{font-size:12px;color:var(--faint)}
+.ev .x{white-space:pre-wrap;word-break:break-word;margin-top:2px}
+.ev.comment .x{background:var(--soft);border-radius:8px;padding:9px 12px;margin-top:5px}
+
+/* files */
+.drop{border:1.5px dashed var(--line2);border-radius:var(--r);padding:22px;text-align:center;color:var(--muted);transition:.12s;display:flex;flex-direction:column;align-items:center;gap:6px}
+.drop .ic{width:22px;height:22px;color:var(--ink)}
+.drop.over{border-color:var(--orange);background:var(--orange-soft)}
+.drop label{color:var(--orange-ink);cursor:pointer;font-weight:600}
+.drop small{color:var(--faint)}
+.files{display:flex;flex-direction:column;gap:6px;margin:14px 0}
+.file{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:8px;padding:8px 8px 8px 12px;cursor:pointer}
+.file:hover{border-color:var(--line2)}
+.file.on{border-color:var(--orange)}
+.file .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.preview{width:100%;height:70vh;border:1px solid var(--line);border-radius:8px;background:#fff}
+.preview-img{max-width:100%;border:1px solid var(--line);border-radius:8px}
+
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;display:none;align-items:flex-start;justify-content:center;padding:48px 12px;overflow:auto}
+.modal-bg.open{display:flex}
+.modal{background:var(--panel);border-radius:12px;width:min(760px,100%);border:1px solid var(--line);animation:pop .16s ease-out}
+@keyframes pop{from{opacity:0;transform:translateY(6px) scale(.99)}}
+.modal.sm{width:min(440px,100%)}
+.mh{padding:18px 22px;display:flex;justify-content:space-between;align-items:center}
+.mh h3{margin:0;font-size:16px;font-weight:650;letter-spacing:-.01em}
+.mb{padding:4px 22px 20px}
+.mf{padding:14px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+.picklist{max-height:50vh;overflow-y:auto;border:1px solid var(--line);border-radius:8px;margin-top:10px}
+.pick{display:flex;gap:11px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);cursor:pointer}
+.pick:last-child{border-bottom:0}
+.pick:hover{background:var(--soft)}
+.pick.dis{opacity:.45;cursor:default}
+.blog{margin-top:14px;display:flex;flex-direction:column;gap:2px;font-size:13px}
+.blog div{display:flex;gap:9px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.blog .ic.okc{color:var(--ok)}.blog .ic.upd{color:var(--orange)}.blog .ic.err{color:var(--red)}
+
+/* analytics */
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:16px}
+.kpi{background:var(--panel);padding:18px 20px}
+.kpi .v{font-size:30px;font-weight:600;margin-top:6px;letter-spacing:-.02em;line-height:1}
+.kpi .v small{font-size:14px;color:var(--muted);font-weight:500;margin-left:3px}
+.kpi .l{font-size:12.5px;color:var(--muted)}
+.kpi.accent{background:var(--black);color:#fff}
+.kpi.accent .l{color:#9A9A9A}.kpi.accent .v{color:var(--orange)}
+.panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:16px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px}
+.panel h3{margin:0 0 16px;font-size:14px;font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.panel h3 select{width:auto;font-weight:400;font-size:13px;padding:5px 28px 5px 9px}
+.fun{display:flex;flex-direction:column;gap:6px}
+.fun-r{display:grid;grid-template-columns:170px 1fr 110px;gap:14px;align-items:center;font-size:13px}
+.fun-b{height:26px;background:var(--soft);border-radius:4px;overflow:hidden}
+.fun-b i{display:block;height:100%;border-radius:4px;min-width:2px}
+.fun-r .pc{text-align:right;color:var(--muted)}
+.fun-r .pc b{color:var(--ink);font-weight:600;margin-right:6px}
+.mini{width:100%;border-collapse:collapse;font-size:13px}
+.mini td,.mini th{padding:8px 4px;border-bottom:1px solid var(--line);text-align:left}
+.mini tr:last-child td{border-bottom:0}
+.mini th{color:var(--muted);font-weight:500;font-size:12px}
+.mini td.r,.mini th.r{text-align:right}
+.bar-in{display:inline-block;height:6px;border-radius:3px;background:var(--orange);vertical-align:middle;margin-right:8px}
+.weeks{display:flex;align-items:flex-end;gap:6px;height:150px;padding-top:12px}
+.weeks div{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px;color:var(--faint);height:100%;justify-content:flex-end}
+.weeks i{display:block;width:100%;background:var(--ink);border-radius:3px 3px 0 0;min-height:2px}
+.weeks div:last-child i{background:var(--orange)}
+.weeks div span:first-child{color:var(--ink);font-weight:600}
+
+/* login */
+.login{min-height:100vh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.login .l{background:#000;color:#fff;padding:40px;display:flex;flex-direction:column;justify-content:space-between}
+.login .l h2{font-size:44px;line-height:1.05;letter-spacing:-.03em;margin:0;max-width:11ch;font-weight:650}
+.login .l h2 span{color:var(--orange)}
+.login .r{display:grid;place-items:center;padding:24px;background:var(--panel)}
+.login form{width:min(360px,100%);display:flex;flex-direction:column;gap:14px}
+.login h3{margin:0;font-size:22px;letter-spacing:-.015em}
+
+.empty{text-align:center;color:var(--muted);padding:60px 20px;background:var(--panel);border:1px dashed var(--line2);border-radius:var(--r);display:flex;flex-direction:column;align-items:center;gap:10px}
+.empty>.ic{width:28px;height:28px;color:var(--faint)}
+.empty b{color:var(--ink);font-size:15px}
+.empty .row{display:flex;gap:8px;margin-top:6px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(16px);background:#000;color:#fff;padding:11px 16px 11px 14px;border-radius:8px;font-size:13px;opacity:0;transition:.2s;pointer-events:none;z-index:60;max-width:90vw;display:flex;gap:9px;align-items:center;border-left:3px solid var(--orange)}
+.toast.show{opacity:1;transform:translateX(-50%)}
+[data-theme=dark] .toast{background:#F2F2F2;color:#000}
+.loading{display:grid;place-items:center;min-height:60vh;color:var(--muted)}
+.loader{width:22px;height:22px;border:2px solid var(--line);border-top-color:var(--orange);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.progress{font-size:13px;color:var(--muted)}
+/* calendar */
+.ivd{display:inline-grid;place-items:center;border-radius:50%;color:#fff;font-size:9px;font-weight:700;flex:none;border:1.5px solid var(--panel);letter-spacing:0;line-height:1;overflow:hidden;box-sizing:border-box}
+.ivd+.ivd{margin-left:-5px}
+.ivd.big{width:34px;height:34px;font-size:12px;border:0;padding:0;cursor:pointer;justify-content:center}
+.caltb{gap:12px}
+.calnav{display:flex;align-items:center;gap:2px}
+.callabel{font-size:16px;font-weight:600;letter-spacing:-.01em;margin-right:auto}
+.ivfilter{display:flex;gap:4px;flex-wrap:wrap}
+.ivfilter button{padding:4px 10px 4px 5px;border-radius:999px;font-size:12.5px;gap:6px}
+.ivfilter button[data-ivf=""]{padding:4px 12px}
+.ivfilter button.on{border-color:var(--ink);background:var(--ink);color:var(--panel)}
+.ivfilter button.on .ivd{border-color:var(--ink)}
+.wk{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.wk-h{display:grid;grid-template-columns:56px repeat(7,1fr);border-bottom:1px solid var(--line)}
+.wk-dh{padding:10px 10px 9px;display:flex;align-items:baseline;gap:7px;cursor:pointer;border-left:1px solid var(--line)}
+.wk-dh span{font-size:12px;color:var(--muted)}
+.wk-dh b{font-size:18px;font-weight:600}
+.wk-dh.on b{background:var(--orange);color:#fff;border-radius:6px;padding:0 6px}
+.wk-b{display:grid;grid-template-columns:56px repeat(7,1fr);max-height:calc(100vh - 250px);overflow-y:auto}
+.wk-t div{font-size:11px;color:var(--faint);text-align:right;padding:0 8px;transform:translateY(-7px)}
+.wk-t div:first-child{transform:none;padding-top:2px}
+.wk-d{position:relative;border-left:1px solid var(--line);background-image:linear-gradient(var(--line) 1px,transparent 1px);background-size:100% 52px;cursor:copy}
+.wk-d.we{background-color:var(--soft)}
+.wk-d.today{background-color:color-mix(in srgb,var(--orange) 4%,var(--panel))}
+.nowline{position:absolute;left:0;right:0;height:2px;background:var(--orange);z-index:3;pointer-events:none}
+.nowline::before{content:"";position:absolute;left:-5px;top:-4px;width:10px;height:10px;border-radius:50%;background:var(--orange)}
+.mt{position:absolute;border-radius:6px;padding:4px 7px;font-size:12px;overflow:hidden;cursor:pointer;z-index:2;display:flex;flex-direction:column;gap:1px;line-height:1.25}
+.mt.online{background:var(--orange-soft);border:1px solid var(--orange);border-left-width:3px;color:var(--ink)}
+.mt.offline{background:var(--ink);border:1px solid var(--ink);border-left:3px solid var(--orange);color:var(--panel)}
+.mt:hover{filter:brightness(.97);z-index:4}
+.mt>*{flex-shrink:0}
+.mt.short{flex-direction:row;align-items:center;gap:6px;padding:2px 7px}
+.mt.short .mt-k,.mt.short .mt-iv{display:none}
+.mt.short .mt-n{order:2;flex-shrink:1;min-width:0}
+.mt-t{font-size:11px;display:flex;align-items:center;gap:4px;opacity:.75}
+.mt-t .ic{width:12px;height:12px}
+.mt-n{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mt-k{font-size:11px;opacity:.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mt-iv{display:flex;margin-top:2px}
+.mt.st-cancelled,.mo-i.st-cancelled,.ml-r.st-cancelled{opacity:.45;text-decoration:line-through}
+.mt.st-done{opacity:.6}
+.mo{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.mo-h{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--line)}
+.mo-h div{padding:9px 10px;font-size:12px;color:var(--muted)}
+.mo-g{display:grid;grid-template-columns:repeat(7,1fr)}
+.mo-c{min-height:112px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:6px;display:flex;flex-direction:column;gap:3px;cursor:copy}
+.mo-c:nth-child(7n){border-right:0}
+.mo-c.out{background:var(--soft)}
+.mo-c.out .mo-n{color:var(--faint)}
+.mo-n{font-size:12.5px;font-weight:600;align-self:flex-start;padding:1px 6px;border-radius:5px}
+.mo-c.today .mo-n{background:var(--orange);color:#fff}
+.mo-i{font-size:11.5px;padding:2px 6px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.mo-i.online{background:var(--orange-soft);color:var(--ink)}
+.mo-i.offline{background:var(--ink);color:var(--panel)}
+.mo-i b{font-weight:600}
+.mo-more{font-size:11.5px;color:var(--muted);padding:0 6px;cursor:pointer}
+.mo-more:hover{color:var(--orange-ink)}
+.ml{display:flex;flex-direction:column;gap:18px}
+.ml-d{font-size:13px;font-weight:600;margin-bottom:8px}
+.ml-g{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.ml-g .ml-d{padding:12px 16px 0;margin-bottom:6px}
+.ml-r{display:grid;grid-template-columns:70px 34px minmax(0,1fr) auto auto;gap:14px;align-items:center;padding:12px 16px;border-top:1px solid var(--line);cursor:pointer}
+.ml-r:hover{background:var(--soft)}
+.ml-t b{display:block;font-size:15px;font-weight:600}
+.ml-t span{font-size:12px;color:var(--muted)}
+.ml-fm{width:32px;height:32px;border-radius:8px;display:grid;place-items:center}
+.ml-fm.online{background:var(--orange-soft);color:var(--orange-ink)}
+.ml-fm.offline{background:var(--ink);color:var(--panel)}
+.ml-n{font-weight:600}
+.ml-iv{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.ivtag{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;border:1px solid var(--line);border-radius:999px;padding:2px 9px 2px 3px}
+.ml-a{display:flex;gap:4px}
+.btnlink{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--orange);color:var(--orange-ink);border-radius:var(--r-s);padding:5px 10px;font-size:13px;font-weight:500;text-decoration:none}
+.btnlink:hover{background:var(--orange);color:#fff}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:12.5px;color:var(--muted);align-items:center}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend .lg-done::before,.legend .lg-cn::before{content:"";width:10px;height:10px;border-radius:3px;background:var(--orange-soft);border:1px solid var(--orange);opacity:.6}
+.legend .lg-cn{text-decoration:line-through}
+.calwarn{display:flex;gap:10px;align-items:center;padding:12px 14px;border:1px solid var(--orange);background:var(--orange-soft);border-radius:var(--r);margin-bottom:16px;font-size:13px}
+.ivpick{display:flex;flex-wrap:wrap;gap:6px}
+.ivchip{border-radius:999px;padding:4px 12px 4px 4px;gap:8px;font-weight:400}
+.ivchip>span:not(.ivd){display:flex;flex-direction:column;align-items:flex-start;line-height:1.15}
+.ivchip b{font-weight:500;font-size:13px}
+.ivchip small{font-size:11px;color:var(--muted)}
+.ivchip.on{border-color:var(--orange);background:var(--orange-soft)}
+.ivchip.on .ic{color:var(--orange)}
+.ivchip.add{padding:6px 12px;border-style:dashed;color:var(--muted)}
+.mconf{display:none}
+.mconf:not(:empty){display:flex;gap:8px;align-items:flex-start;color:var(--orange-ink);font-size:12.5px;margin-top:6px}
+.fmt-seg{align-self:flex-start}
+.fmt-seg button{gap:7px}
+.fmt-seg button.on .ic{color:var(--orange)}
+.ivrows{display:flex;flex-direction:column;gap:8px}
+.ivrow{display:grid;grid-template-columns:34px 1fr 1fr 34px;gap:8px;align-items:center}
+.meet-row{cursor:pointer;border-color:var(--orange);background:var(--orange-soft)}
+.meet-row .t .ic{color:var(--orange)}
+.kmeet{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--orange-ink);font-weight:500}
+.kmeet .ic{width:13px;height:13px}
+@media (max-width:900px){.ml-r{grid-template-columns:60px 30px 1fr}.ml-iv,.ml-a{grid-column:3}.ivrow{grid-template-columns:34px 1fr 34px}.ivrow input[data-k=role]{grid-column:2}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+@media (max-width:900px){
+  aside{position:static;width:100%;flex-direction:row;align-items:center;overflow-x:auto}
+  #app{flex-direction:column}
+  main{margin-left:0}
+  .logo{padding:14px}
+  nav{flex-direction:row}
+  nav a.on::before{display:none}
+  .side-foot{display:none}
+  .top{padding:0 16px;height:auto;min-height:60px;flex-wrap:wrap;padding-block:10px}
+  .content{padding:16px}
+  .grid{grid-template-columns:1fr 1fr}
+  .c2,.c3,.c4{grid-column:span 1}.c6,.sec{grid-column:span 2}
+  .fun-r{grid-template-columns:100px 1fr 80px}
+  .login{grid-template-columns:1fr}.login .l{display:none}
+}
+</style>
+</head>
+<body>
+<script>try{const t=localStorage.getItem("naim-theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.dataset.theme=t}catch(e){}</script>
+<div id="root"><div class="loading"><div class="loader"></div></div></div>
+
+<div class="ovl" id="ovl"></div>
+<div class="drawer" id="drawer"></div>
+<div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ================= УТИЛИТЫ ================= */
+const ICONS={
+ brief:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18"/>',
+ users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.4 3.3-5.5 6.5-5.5s5.9 2.1 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c2 .7 3.2 2.5 3.5 5.2"/>',
+ chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ upload:'<path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>',
+ search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+ sliders:'<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
+ x:'<path d="M6 6l12 12M18 6 6 18"/>',
+ file:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>',
+ image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-5-5-9 9"/>',
+ clip:'<path d="m20 11.5-8.2 8.2a5 5 0 0 1-7.1-7.1l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4L15 7"/>',
+ msg:'<path d="M20 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/>',
+ arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',
+ phone:'<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>',
+ mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+ send:'<path d="M21 3 3 10.5l7 2.5 2.5 7z"/><path d="m10 13 4-4"/>',
+ trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/>',
+ out:'<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H3"/>',
+ down:'<path d="M12 4v12M7 11l5 5 5-5M4 20h16"/>',
+ check:'<path d="m5 12 5 5L20 7"/>',
+ clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+ ban:'<circle cx="12" cy="12" r="8.5"/><path d="m6 6 12 12"/>',
+ edit:'<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>',
+ spark:'<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/>',
+ ext:'<path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/>',
+ refresh:'<path d="M20 11a8 8 0 0 0-14.6-4.4L4 8M4 4v4h4M4 13a8 8 0 0 0 14.6 4.4L20 16M20 20v-4h-4"/>',
+ warn:'<path d="M12 4 2.5 20h19z"/><path d="M12 10v4M12 17.2v.1"/>',
+ sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+ moon:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5"/>',
+ up:'<path d="M12 19V5M6 11l6-6 6 6"/>',
+ dn:'<path d="M12 5v14M6 13l6 6 6-6"/>',
+ inbox:'<path d="M3 13h5l1.5 3h5L16 13h5"/><path d="M5.5 5h13L21 13v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-6z"/>',
+ db:'<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>'
+};
+Object.assign(ICONS,{
+ cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+ video:'<rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/>',
+ pin:'<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+ left:'<path d="m15 6-6 6 6 6"/>',
+ right:'<path d="m9 6 6 6-6 6"/>'
+});
+const ic=(n,c="")=>`<svg class="ic ${c}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]||""}</svg>`;
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid=()=>(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2));
+const nowIso=()=>new Date().toISOString();
+const money=v=>v||v===0?Number(v).toLocaleString("ru-RU")+" ₽":"";
+const fmtD=d=>d?new Date(d).toLocaleDateString("ru-RU",{day:"2-digit",month:"2-digit",year:"numeric"}):"";
+const fmtDT=d=>d?new Date(d).toLocaleString("ru-RU",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}):"";
+const days=d=>d?Math.max(0,Math.floor((Date.now()-new Date(d))/864e5)):0;
+const plural=(n,a,b,c)=>{n=Math.abs(n)%100;const n1=n%10;if(n>10&&n<20)return c;if(n1>1&&n1<5)return b;if(n1===1)return a;return c};
+const initials=f=>(f||"?").split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase();
+function toast(t,ms=2600){const e=$("#toast");e.textContent=t;e.insertAdjacentHTML("afterbegin",ic("check"));e.classList.add("show");clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove("show"),ms)}
+function stars(n){n=n||0;return `<span class="stars">${"★".repeat(n)}<span>${"★".repeat(5-n)}</span></span>`}
+
+const DEFAULT_STAGES=["Новые","Отбор","Телефонное интервью","Интервью","Тестовое задание","Оффер","Вышел на работу"];
+const REJECT="Отказ";
+const REJECT_REASONS=["Не подходит по опыту","Не подходит по навыкам","Высокие ожидания по зарплате","Кандидат отказался","Не выходит на связь","Выбрали другого кандидата","Другое"];
+const GRADES=["Intern","Junior","Middle","Senior","Lead","Head"];
+const FORMATS=["Офис","Удалёнка","Гибрид","Любой"];
+const SOURCES=["hh.ru","Хабр Карьера","Рекомендация","Telegram","LinkedIn","Сайт компании","SuperJob","Другое"];
+const STAGE_COLORS=["#9aa5b1","#5b8def","#7b61ff","#2f6fed","#c27c0e","#e08b00","#1f9d55"];
+const stageColor=(i,n)=>`rgba(255,91,0,${(n<=1?1:0.18+0.82*i/(n-1)).toFixed(2)})`;
+
+/* ================= ХРАНИЛИЩЕ ================= */
+class SupaStore{
+  constructor(url,key){this.sb=supabase.createClient(url,key);this.kind="supabase"}
+  async user(){const {data}=await this.sb.auth.getSession();return data.session?.user||null}
+  async signIn(email,password){const {error}=await this.sb.auth.signInWithPassword({email,password});if(error)throw error}
+  async signOut(){await this.sb.auth.signOut()}
+  async all(t){let out=[],from=0;for(;;){const {data,error}=await this.sb.from(t).select("*").range(from,from+999);if(error)throw error;out.push(...data);if(data.length<1000)break;from+=1000}return out}
+  async insert(t,row){const {data,error}=await this.sb.from(t).insert(row).select().single();if(error)throw error;return data}
+  async update(t,id,patch){const {data,error}=await this.sb.from(t).update(patch).eq("id",id).select().single();if(error)throw error;return data}
+  async remove(t,id){const {error}=await this.sb.from(t).delete().eq("id",id);if(error)throw error}
+  async upload(cid,file){const ext=(file.name.split(".").pop()||"bin").toLowerCase().replace(/[^a-z0-9]/g,"");const path=`${cid}/${uid()}.${ext}`;const {error}=await this.sb.storage.from("resumes").upload(path,file,{contentType:file.type||undefined});if(error)throw error;return {path,name:file.name,size:file.size,type:file.type,at:nowIso()}}
+  async fileUrl(path){const {data,error}=await this.sb.storage.from("resumes").createSignedUrl(path,3600);if(error)throw error;return data.signedUrl}
+  async delFile(path){await this.sb.storage.from("resumes").remove([path])}
+}
+class LocalStore{
+  constructor(){this.kind="local";this.dbp=new Promise((res,rej)=>{
+    if(!window.indexedDB){rej(new Error("Браузер не даёт хранить данные для файла, открытого с диска. Открой index.html в Chrome, Яндекс Браузере или Edge"));return}
+    const t=setTimeout(()=>rej(new Error("Локальная база занята другой вкладкой со старой версией приложения. Закрой все вкладки с этим файлом и открой его заново")),8000);
+    let r;try{r=indexedDB.open("naim-ats",2)}catch(e){clearTimeout(t);rej(e);return}
+    r.onupgradeneeded=()=>{const d=r.result;["vacancies","candidates","applications","events","blobs","interviewers","meetings"].forEach(s=>d.objectStoreNames.contains(s)||d.createObjectStore(s,{keyPath:"id"}))};
+    r.onblocked=()=>{clearTimeout(t);rej(new Error("Закрой другие вкладки с этим приложением (там открыта старая версия) и обнови страницу"))};
+    r.onsuccess=()=>{clearTimeout(t);const d=r.result;d.onversionchange=()=>{d.close();toast("Приложение обновилось в другой вкладке — обнови страницу",6000)};res(d)};
+    r.onerror=()=>{clearTimeout(t);rej(r.error||new Error("Не удалось открыть локальную базу"))}})}
+  async tx(store,mode,fn){const d=await this.dbp;return new Promise((res,rej)=>{const t=d.transaction(store,mode);const s=t.objectStore(store);const r=fn(s);t.oncomplete=()=>res(r&&r.result!==undefined?r.result:r);t.onerror=()=>rej(t.error)})}
+  async user(){return {email:"локальный режим"}}
+  async signIn(){} async signOut(){}
+  async all(t){return this.tx(t,"readonly",s=>s.getAll())}
+  async insert(t,row){row={id:uid(),created_at:nowIso(),...row};if(t==="events")row.author_email=row.author_email||"Я";await this.tx(t,"readwrite",s=>s.put(row));return row}
+  async update(t,id,patch){const cur=await this.tx(t,"readonly",s=>s.get(id));const row={...cur,...patch};await this.tx(t,"readwrite",s=>s.put(row));return row}
+  async remove(t,id){await this.tx(t,"readwrite",s=>s.delete(id))}
+  async upload(cid,file){const id=uid();await this.tx("blobs","readwrite",s=>s.put({id,blob:file}));return {path:id,name:file.name,size:file.size,type:file.type,at:nowIso()}}
+  async fileUrl(path){const r=await this.tx("blobs","readonly",s=>s.get(path));return r?URL.createObjectURL(r.blob):""}
+  async delFile(path){await this.tx("blobs","readwrite",s=>s.delete(path))}
+}
+const CFG=window.APP_CONFIG||{};
+const store=(CFG.SUPABASE_URL&&CFG.SUPABASE_ANON_KEY&&window.supabase)?new SupaStore(CFG.SUPABASE_URL,CFG.SUPABASE_ANON_KEY):new LocalStore();
+
+/* ================= СОСТОЯНИЕ ================= */
+const S={user:null,vacancies:[],candidates:[],apps:[],events:[],interviewers:[],meetings:[],calError:false,loaded:false};
+const byId=(arr,id)=>arr.find(x=>x.id===id);
+const vac=id=>byId(S.vacancies,id);
+const cand=id=>byId(S.candidates,id);
+const stagesOf=v=>Array.isArray(v?.stages)&&v.stages.length?v.stages:DEFAULT_STAGES;
+const appsOfCand=cid=>S.apps.filter(a=>a.candidate_id===cid);
+const appsOfVac=vid=>S.apps.filter(a=>a.vacancy_id===vid);
+const UI={cal:{view:"week",anchor:Date.now(),iv:""},drawerCand:null,drawerTab:"profile",candSort:{k:"updated_at",d:-1},candQ:"",candF:{grade:"",source:"",tag:"",city:"",vac:""},vacFilter:"open",boardQ:""};
+
+async function loadAll(){
+  const [v,c,a,e]=await Promise.all(["vacancies","candidates","applications","events"].map(t=>store.all(t)));
+  S.vacancies=v;S.candidates=c.map(normCand);S.apps=a;S.events=e;
+  S.calError=false;const safe=t=>store.all(t).catch(err=>{console.warn(err);S.calError=true;return []});
+  const [iv,mt]=await Promise.all([safe("interviewers"),safe("meetings")]);S.interviewers=iv;S.meetings=mt;
+  await seedInterviewers();S.loaded=true;
+}
+function normCand(c){return {...c,skills:c.skills||[],tags:c.tags||[],files:c.files||[]}}
+function replace(arr,row){const i=arr.findIndex(x=>x.id===row.id);if(i>=0)arr[i]=row;else arr.push(row);return row}
+
+async function addEvent(candidate_id,type,text,meta,vacancy_id){
+  try{const ev=await store.insert("events",{candidate_id,type,text:text||null,meta:meta||null,vacancy_id:vacancy_id||null});S.events.push(ev);return ev}catch(e){console.warn(e)}
+}
+async function saveCandidate(data,id){
+  data={...data,updated_at:nowIso()};
+  if(id){const row=normCand(await store.update("candidates",id,data));replace(S.candidates,row);return row}
+  const row=normCand(await store.insert("candidates",{rating:0,skills:[],tags:[],files:[],...data}));
+  S.candidates.push(row);await addEvent(row.id,"created","Кандидат добавлен в базу"+(row.source?` · источник: ${row.source}`:""));
+  return row;
+}
+async function addToVacancy(cid,vid,stageIdx=0){
+  if(S.apps.some(a=>a.candidate_id===cid&&a.vacancy_id===vid))return null;
+  const v=vac(vid),st=stagesOf(v);
+  const a=await store.insert("applications",{candidate_id:cid,vacancy_id:vid,stage:st[stageIdx]||st[0],max_stage:stageIdx,stage_changed_at:nowIso()});
+  S.apps.push(a);await addEvent(cid,"vacancy",`Добавлен на вакансию «${v.title}» · этап «${a.stage}»`,null,vid);
+  return a;
+}
+async function moveApp(appId,to,reason){
+  const a=byId(S.apps,appId);if(!a||a.stage===to)return;
+  const v=vac(a.vacancy_id),st=stagesOf(v),idx=st.indexOf(to);
+  const patch={stage:to,stage_changed_at:nowIso(),rejected_reason:to===REJECT?(reason||null):null};
+  if(idx>=0)patch.max_stage=Math.max(a.max_stage||0,idx);
+  const from=a.stage;
+  replace(S.apps,await store.update("applications",appId,patch));
+  if(to===REJECT)await addEvent(a.candidate_id,"reject",`Отказ по вакансии «${v.title}»${reason?": "+reason:""}`,{from,to,reason},v.id);
+  else await addEvent(a.candidate_id,"stage",`«${v.title}»: ${from} → ${to}`,{from,to},v.id);
+}
+async function removeApp(appId){const a=byId(S.apps,appId);if(!a)return;await store.remove("applications",appId);S.apps=S.apps.filter(x=>x.id!==appId);const v=vac(a.vacancy_id);await addEvent(a.candidate_id,"vacancy",`Убран с вакансии «${v?.title||""}»`,null,a.vacancy_id)}
+async function deleteCandidate(cid){
+  const c=cand(cid);for(const f of c?.files||[]){try{await store.delFile(f.path)}catch(e){}}
+  for(const a of appsOfCand(cid)){if(store.kind==="local")await store.remove("applications",a.id)}
+  if(store.kind==="local")for(const e of S.events.filter(e=>e.candidate_id===cid))await store.remove("events",e.id);
+  await store.remove("candidates",cid);
+  S.candidates=S.candidates.filter(x=>x.id!==cid);S.apps=S.apps.filter(a=>a.candidate_id!==cid);S.events=S.events.filter(e=>e.candidate_id!==cid);
+  S.meetings.forEach(m=>{if(m.candidate_id===cid)m.candidate_id=null});
+}
+function findDuplicate(d){
+  const norm=p=>(p||"").replace(/\D/g,"").slice(-10);
+  return S.candidates.find(c=>(d.email&&c.email&&c.email.toLowerCase()===d.email.toLowerCase())||(d.phone&&c.phone&&norm(c.phone)&&norm(c.phone)===norm(d.phone)));
+}
+
+/* ================= РАЗБОР РЕЗЮМЕ (без ИИ) ================= */
+async function pdfLines(file){
+  if(!window.pdfjsLib)throw new Error("PDF-библиотека не загрузилась");
+  const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+  const lines=[];
+  for(let p=1;p<=Math.min(pdf.numPages,8);p++){
+    const page=await pdf.getPage(p);const tc=await page.getTextContent();
+    const rows=new Map();
+    for(const it of tc.items){if(!it.str||!it.str.trim())continue;const y=Math.round(it.transform[5]/2.5);if(!rows.has(y))rows.set(y,[]);rows.get(y).push({x:it.transform[4],w:it.width,s:it.str})}
+    [...rows.entries()].sort((a,b)=>b[0]-a[0]).forEach(([,items])=>{
+      items.sort((a,b)=>a.x-b.x);let s="",end=null;
+      for(const it of items){if(end!==null){const gap=it.x-end;s+=gap>14?" | ":(gap>1.5&&!s.endsWith(" ")&&!it.s.startsWith(" ")?" ":"")}s+=it.s;end=it.x+it.w}
+      s=s.replace(/\s+/g," ").trim();if(s)lines.push(s);
+    });
+  }
+  return lines;
+}
+function guessGrade(pos,exp){
+  const p=(pos||"").toLowerCase();
+  if(/head|директор|руководитель (отдела|направления|департамента)|cto|cfo|ceo/.test(p))return "Head";
+  if(/lead|лид|ведущий|тимлид|руководитель группы/.test(p))return "Lead";
+  if(/senior|старший|сеньор/.test(p))return "Senior";
+  if(/middle|мидл/.test(p))return "Middle";
+  if(/junior|младший|джун/.test(p))return "Junior";
+  if(/стаж|intern|trainee|практикант/.test(p))return "Intern";
+  if(exp==null)return "";
+  if(exp<1)return "Intern";if(exp<3)return "Junior";if(exp<6)return "Middle";return "Senior";
+}
+function parseResume(lines){
+  const clean=lines.map(l=>l.replace(/ \| /g," ").replace(/\s+/g," ").trim()).filter(Boolean);
+  const text=clean.join("\n");
+  const r={};
+  const CITIES="Москва|Санкт-Петербург|Новосибирск|Екатеринбург|Казань|Нижний Новгород|Краснодар|Самара|Ростов-на-Дону|Уфа|Пермь|Воронеж|Челябинск|Омск|Тюмень|Сочи|Калининград|Владивосток|Красноярск|Волгоград|Саратов|Тула|Ярославль|Иркутск|Хабаровск|Минск|Алматы|Астана|Ташкент|Химки|Подольск|Балашиха|Мытищи|Королёв|Люберцы|Красногорск|Одинцово";
+  const nb="(?<![А-Яа-яЁё])",ne="(?![А-Яа-яЁё])";
+  // контакты
+  const em=text.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/);if(em)r.email=em[0];
+  const ph=text.match(/(?:\+\s?7|(?<!\d)8)[\s(‑–-]*\d{3}[\s)‑–-]*\d{3}[\s‑–-]*\d{2}[\s‑–-]*\d{2}(?!\d)/);
+  if(ph){const d=ph[0].replace(/\D/g,"").replace(/^8/,"7");if(d.length===11)r.phone=`+7 (${d.slice(1,4)}) ${d.slice(4,7)}-${d.slice(7,9)}-${d.slice(9,11)}`}
+  const tg=text.match(/(?:t\.me\/|telegram\s*[:\-—]?\s*@?|телеграм\w*\s*[:\-—]?\s*@?|тг\s*[:\-—]?\s*@?|(?:^|[\s,;(])@)([A-Za-z][A-Za-z0-9_]{4,31})(?![A-Za-z0-9_.@])/im);
+  if(tg&&!(r.email&&r.email.toLowerCase().startsWith(tg[1].toLowerCase()+"@")))r.telegram="@"+tg[1];
+  // ФИО
+  const W="[А-ЯЁA-Z][а-яёa-z]+(?:-[А-ЯЁA-Z][а-яёa-z]+)?";
+  const nameRe=new RegExp(`^${W}(?:\\s+${W}){1,2}$`);
+  const stop=/^(Резюме|Желаемая|Опыт|Образование|Навыки|Контакты|Мужчина|Женщина|Обо мне|Ключевые|Личная|Curriculum|Проживает|Гражданство|Специализац|Занятость|График|Основное|Высшее|Знание)/i;
+  const fioL=text.match(/^(?:ФИО|Ф\.И\.О\.?)\s*[:\-—]\s*(.+)$/im);
+  if(fioL)r.fio=fioL[1].trim();
+  else for(const l of clean.slice(0,10)){let s=l.replace(/\s*[•|].*$/,"").replace(/^Резюме[:\s]+/i,"").trim();
+    if(/^[А-ЯЁ\s-]{5,}$/.test(s)&&s.split(/\s+/).length>=2&&s.split(/\s+/).length<=3)s=s.toLowerCase().replace(/(^|[\s-])([а-яё])/g,(m,p,c)=>p+c.toUpperCase());
+    if(nameRe.test(s)&&!stop.test(s)&&!new RegExp(`^(${CITIES})$`).test(s)){r.fio=s;break}}
+  // возраст
+  const age=text.match(/(?:Мужчина|Женщина)[,\s]+(\d{2})\s*(?:год|года|лет)/i)||text.match(/Возраст\s*[:\-—]?\s*(\d{2})/i)||text.match(/(?:^|[\s,])(\d{2})\s*(?:год|года|лет)\s*,?\s*(?:родил)/im);
+  if(age&&+age[1]>=14&&+age[1]<=80)r.age=+age[1];
+  else{const bd=text.match(/(?:Дата рождения|родил(?:ся|ась))\s*[:\-—]?\s*(\d{1,2})[.\s]+(\d{1,2}|[а-я]+)[.\s]+((?:19|20)\d{2})/i);
+    if(bd){const MN=["январ","феврал","март","апрел","ма","июн","июл","август","сентябр","октябр","ноябр","декабр"];let mo=/^\d+$/.test(bd[2])?+bd[2]-1:MN.findIndex(k=>bd[2].toLowerCase().startsWith(k));if(mo<0)mo=0;
+      const b=new Date(+bd[3],mo,+bd[1]),n=new Date();let a=n.getFullYear()-b.getFullYear();if(n<new Date(n.getFullYear(),mo,+bd[1]))a--;if(a>=14&&a<=80)r.age=a}}
+  // город
+  const city=text.match(/(?:Проживает|Город проживания|Город|Местоположение|Место жительства)\s*[:\-—]\s*(?:г\.\s*)?([^\n,•|(]+)/i);
+  if(city)r.city=city[1].replace(/\s*м\..*$/,"").trim();
+  else{const cm=clean.slice(0,20).join("\n").match(new RegExp(`${nb}(${CITIES})${ne}`));if(cm)r.city=cm[1]}
+  // желаемая должность и зарплата
+  const salRe=/(\d[\d\s  ]{2,})\s*(?:₽|руб\.?|RUB|р\.)/i;
+  const takeSalary=l=>{const m=l.match(salRe);if(m){const v=parseInt(m[1].replace(/\D/g,""),10);if(v>=10000&&!r.salary)r.salary=v;return l.replace(m[0],"").replace(/(на руки|до вычета налогов|net|gross|в месяц)/ig,"").replace(/[·•,–—-]\s*$/,"").trim()}return l};
+  const di=clean.findIndex(l=>/^Желаемая должность/i.test(l));
+  if(di>=0){
+    const rest=clean[di].replace(/^Желаемая должность( и зарплата)?\s*[:\-—]?\s*/i,"");
+    const cand=[rest,...clean.slice(di+1,di+6)];
+    for(const l0 of cand){if(!l0)continue;if(/^(Специализаци|Занятость|График|Желательное|Опыт работы|Профессиональн|Готовность|Время в пути)/i.test(l0))break;
+      const l=takeSalary(l0);if(!r.position&&l&&!/^\d/.test(l)&&l.length<=90)r.position=l}
+  }
+  if(!r.position){const p=text.match(/^(?:Должность|Позиция|Желаемая позиция|Цель|Специальность)\s*[:\-—]\s*([^\n]+)$/im);if(p)r.position=takeSalary(p[1].trim())}
+  if(!r.position&&r.fio){const fl=r.fio.toLowerCase();const i=clean.findIndex(l=>l.toLowerCase().startsWith(fl));const n=i>=0?clean[i+1]:null;if(n&&n.length<=70&&!/@|\d{3}|^(Мужчина|Женщина|Проживает|Телефон|Email|Контакты)/i.test(n)&&!new RegExp(`^(${CITIES})`).test(n))r.position=takeSalary(n)}
+  if(!r.salary){const s=text.match(/(?:Зарплата|Ожидания|Желаемая зарплата|Желаемый доход|Зарплатные ожидания)[^\d\n]{0,25}(\d[\d\s ]{3,})/i);if(s){const v=parseInt(s[1].replace(/\D/g,""),10);if(v>=10000)r.salary=v}}
+  // опыт
+  const ex=text.match(/Опыт работы\s*[—–:\-]?\s*(?:(\d+)\s*(?:год|года|лет))?\s*(?:(\d+)\s*месяц)?/i)||text.match(/(?:Общий стаж|Стаж работы|Опыт)\s*[:\-—]?\s*(\d+)\s*(?:год|года|лет)(?:\s*(\d+)\s*месяц)?/i);
+  if(ex&&(ex[1]||ex[2])){const y=(+ex[1]||0)+(+ex[2]||0)/12;r.experience=Math.round(y*2)/2}
+  else{const MON={январ:0,феврал:1,март:2,апрел:3,ма:4,июн:5,июл:6,август:7,сентябр:8,октябр:9,ноябр:10,декабр:11};
+    const rng=[...text.matchAll(/([а-яё]+\s+)?((?:19|20)\d{2})\s*[—–-]\s*(настоящее время|н\.\s*в\.|по наст|сейчас|([а-яё]+\s+)?((?:19|20)\d{2}))/gi)];
+    let months=0;for(const m of rng){const mo=s=>{if(!s)return 0;s=s.toLowerCase();for(const k in MON)if(s.startsWith(k))return MON[k];return 0};
+      const st=new Date(+m[2],mo(m[1]));const en=m[5]?new Date(+m[5],mo(m[4])):new Date();if(en>st)months+=(en-st)/2.63e9}
+    if(months>=1)r.experience=Math.round(months/12*2)/2}
+  // формат
+  const sch=(text.match(/График работы\s*[:\-—]?\s*([^\n]+)/i)||[])[1]||"";
+  const empl=(text.match(/Занятость\s*[:\-—]?\s*([^\n]+)/i)||[])[1]||"";
+  const fm=(sch+" "+empl+" "+(text.match(/Формат работы\s*[:\-—]?\s*([^\n]+)/i)||[])[1]).toLowerCase();
+  if(/удал/.test(fm))r.work_format=/полный день|гибк|сменн|офис/.test(fm)?"Любой":"Удалёнка";else if(/гибрид/.test(fm))r.work_format="Гибрид";else if(/полный день|офис/.test(fm))r.work_format="Офис";
+  // навыки
+  let si=-1;lines.forEach((l,i)=>{const c=l.replace(/ \| /g," ").trim();if(/^(Навыки|Ключевые навыки|Skills|Key skills|Профессиональные навыки|Компетенции)\s*:?$/i.test(c))si=i});
+  const skills=[];const STOPSK=/^(Опыт вождения|Дополнительная информация|Обо мне|Рекомендации|Портфолио|Резюме обновлено|Знание языков|Гражданство|Образование|Опыт работы|Повышение квалификации|Тесты|Электронные сертификаты|Личные качества|Хобби)/i;
+  if(si>=0){
+    for(let i=si+1;i<Math.min(si+30,lines.length);i++){
+      const raw=lines[i];if(STOPSK.test(raw.replace(/ \| /g," ").trim()))break;
+      raw.split(/ \| |[,;•·]|\s{2,}/).map(x=>x.replace(/^[-–—\s]+/,"").trim()).filter(x=>x&&x.length<=40&&!/^\d+$/.test(x)&&!/Резюме обновлено/.test(x)).forEach(x=>skills.push(x));
+    }
+  }else{const m=text.match(/(?:Навыки|Ключевые навыки|Skills)\s*:\s*([^\n]+)/i);if(m)m[1].split(/[,;•]/).map(x=>x.trim()).filter(Boolean).forEach(x=>skills.push(x))}
+  r.skills=[...new Set(skills)].filter(x=>!/^(Навыки|Знание языков|Ключевые навыки)$/i.test(x)).slice(0,25);
+  // ссылка и источник
+  const link=text.match(/https?:\/\/(?:[\w-]+\.)?hh\.ru\/resume\/[\w-]+/);if(link)r.resume_url=link[0];
+  if(/hh\.ru|headhunter|Резюме обновлено/i.test(text))r.source="hh.ru";
+  else if(/habr|хабр/i.test(text))r.source="Хабр Карьера";
+  else if(/superjob/i.test(text))r.source="SuperJob";
+  r.grade=guessGrade(r.position,r.experience);
+  return r;
+}
+function parseVacancy(lines){
+  const clean=lines.map(l=>l.replace(/ \| /g," ").trim()).filter(Boolean);
+  const text=clean.join("\n");const r={};
+  const num=s=>parseInt(String(s).replace(/\D/g,""),10)||null;
+  const salRe=/(?:от\s*([\d\s\u00a0\u202f]{3,}))?\s*(?:до\s*([\d\s\u00a0\u202f]{3,}))?\s*(?:₽|руб)/i;
+  let salIdx=-1;
+  for(let i=0;i<Math.min(clean.length,25);i++){const m=clean[i].match(salRe);if(m&&(m[1]||m[2])){r.salary_from=m[1]?num(m[1]):null;r.salary_to=m[2]?num(m[2]):null;salIdx=i;break}}
+  if(salIdx<0){const m=text.match(/(?:Зарплата|Оклад|Доход)[^\d\n]{0,15}(\d[\d\s\u00a0]{3,})(?:\s*[-–—]\s*(\d[\d\s\u00a0]{3,}))?/i);if(m){r.salary_from=num(m[1]);if(m[2])r.salary_to=num(m[2])}}
+  const skip=/hh\.ru|headhunter|^Вакансия$|^\d{1,2}[./]\d{1,2}[./]\d{2,4}|^https?:|Откликнуться|^Ваканси[ия] опубликована|^Требуемый опыт|занятость|^Описание вакансии|^Компания|^\d+$/i;
+  const tl=text.match(/^(?:Должность|Вакансия|Позиция)\s*:\s*([^\n]{3,80})$/im);
+  if(tl)r.title=tl[1].trim();
+  else{const cand=(salIdx>0?clean.slice(0,salIdx).reverse():clean.slice(0,8)).find(l=>!skip.test(l)&&l.length>=3&&l.length<=90&&/[А-ЯЁA-Za-zа-яё]/.test(l));if(cand)r.title=cand.replace(/\s*[—–-]\s*вакансия.*$/i,"").trim()}
+  const dep=text.match(/^(?:Отдел|Подразделение|Департамент|Управление)\s*:\s*([^\n]{2,60})$/im);if(dep)r.department=dep[1].trim();
+  const cityM=text.match(/(?:Город|Местоположение|Место работы|Адрес)[:\s]+(?:г\.\s*)?([А-ЯЁ][а-яё]+(?:[-\s][А-ЯЁ][а-яё]+)?)/)||clean.slice(2).join("\n").match(/(?<![А-Яа-яЁё])(Москва|Санкт-Петербург|Новосибирск|Екатеринбург|Казань|Нижний Новгород|Краснодар|Самара|Ростов-на-Дону|Уфа|Пермь|Воронеж|Челябинск|Омск|Тюмень|Сочи|Калининград|Владивосток|Красноярск)(?![А-Яа-яЁё])/)||text.match(/(?<![А-Яа-яЁё])г\.\s*([А-ЯЁ][а-яё-]+)/);
+  if(cityM)r.city=cityM[1].trim();
+  const meta=[];const exp=text.match(/Требуемый опыт работы:?\s*([^\n]+)/i);if(exp)meta.push("Опыт: "+exp[1].trim());
+  const emp=clean.find(l=>/(полная|частичная) занятость|удал[её]нн|гибрид|полный день|сменный/i.test(l)&&l.length<120);if(emp)meta.push(emp);
+  let di=clean.findIndex(l=>/^(Обязанности|Задачи|Чем предстоит заниматься|Требования|Мы ожидаем|Описание вакансии|О компании|О нас|Мы ищем|Что нужно делать)(?=[\s:]|$)/i.test(l));
+  if(di<0)di=Math.max(salIdx+1,clean.indexOf(r.title)+1,0);
+  let body=clean.slice(di).filter(l=>!/hh\.ru|Откликнуться|Вакансия опубликована|^\d+\s*\/\s*\d+$/i.test(l));
+  body=body.map(l=>/^(Обязанности|Задачи|Требования|Условия|Мы предлагаем|Ключевые навыки|О компании|Будет плюсом|Чем предстоит заниматься|Мы ожидаем)/i.test(l)?"\n"+l:l);
+  r.description=((meta.length?meta.join("\n")+"\n":"")+body.join("\n")).replace(/\n{3,}/g,"\n\n").trim().slice(0,6000);
+  return r;
+}
+async function parseFile(file){
+  if(!(file.type==="application/pdf"||/\.pdf$/i.test(file.name)))return {};
+  const lines=await pdfLines(file);
+  if(lines.join("").replace(/\s/g,"").length<100)return {_scan:true};
+  return parseResume(lines);
+}
+function fioFromFileName(name){const s=name.replace(/\.[^.]+$/,"").replace(/[_]+/g," ").replace(/резюме|resume|cv/ig,"").trim();return s||name}
+
+/* ================= МОДАЛКИ ================= */
+function openModal(html,cls=""){const m=$("#modal");m.className="modal "+cls;m.innerHTML=html;$("#modalBg").classList.add("open");setTimeout(()=>{const i=$("input:not([type=file]):not([type=checkbox]),textarea,select",m);i&&i.focus()},30);return m}
+function closeModal(){$("#modalBg").classList.remove("open");$("#modal").innerHTML=""}
+$("#modalBg").addEventListener("mousedown",e=>{if(e.target.id==="modalBg")closeModal()});
+function confirmBox(title,text,okText="Удалить"){return new Promise(res=>{const m=openModal(`<div class="mh"><h3>${esc(title)}</h3></div><div class="mb">${esc(text)}</div><div class="mf"><button data-a="no">Отмена</button><button class="btn-p" data-a="ok" style="background:var(--red);border-color:var(--red)">${esc(okText)}</button></div>`,"sm");m.onclick=e=>{const a=e.target.dataset.a;if(!a)return;closeModal();res(a==="ok")}})}
+function rejectBox(name){return new Promise(res=>{const m=openModal(`<div class="mh"><h3>Отказ: ${esc(name)}</h3></div><div class="mb"><div class="fl"><label>Причина отказа</label><select id="rr">${REJECT_REASONS.map(r=>`<option>${esc(r)}</option>`).join("")}</select></div><div class="fl" style="margin-top:10px"><label>Комментарий (необязательно)</label><textarea id="rc" rows="3"></textarea></div></div><div class="mf"><button data-a="no">Отмена</button><button class="btn-p" data-a="ok" style="background:var(--red);border-color:var(--red)">Отказать</button></div>`,"sm");m.onclick=e=>{const a=e.target.dataset.a;if(!a)return;const r=$("#rr").value+($("#rc").value.trim()?` — ${$("#rc").value.trim()}`:"");closeModal();res(a==="ok"?r:null)}})}
+document.addEventListener("keydown",e=>{
+  const typing=/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName||"");
+  if(!typing&&!$("#modalBg").classList.contains("open")){
+    if(e.key==="/"){const q=$("#cq")||$("#bq");if(q){e.preventDefault();q.focus()}else{location.hash="#candidates";setTimeout(()=>$("#cq")?.focus(),50);e.preventDefault()}return}
+    if((e.key==="n"||e.key==="т")&&!e.ctrlKey&&!e.metaKey&&S.loaded){e.preventDefault();const r=route();newCandidateModal(r.v==="board"?r.id:undefined);return}
+  }
+  if(e.key!=="Escape")return;if($("#modalBg").classList.contains("open"))closeModal();else if($("#drawer").classList.contains("open"))closeDrawer()});
+
+/* ---------- форма вакансии ---------- */
+function vacancyModal(v,pickFile){
+  const st=stagesOf(v).join("\n");let pending=[];const vfiles=[...(v?.files||[])];
+  const m=openModal(`<div class="mh"><h3>${v?"Редактировать вакансию":"Новая вакансия"}</h3><button class="btn-g" data-x aria-label="Закрыть">${ic("x")}</button></div>
+  <form class="mb grid" id="vf" autocomplete="off">
+    <div class="c6"><div class="drop" id="vdrop">${ic("file","lg")}<div>Перетащи PDF с описанием вакансии или <label>выбери файл<input type="file" id="vfile" accept=".pdf" hidden></label><br><small>Подойдёт вакансия с hh.ru, сохранённая в PDF, или любой документ с требованиями: поля заполнятся автоматически</small></div></div><div class="files" id="vfl"></div></div>
+    <div class="fl c4"><label>Название *</label><input name="title" required value="${esc(v?.title)}" placeholder="Например, Финансовый аналитик"></div>
+    <div class="fl c2"><label>Статус</label><select name="status">${[["open","Открыта"],["paused","На паузе"],["closed","Закрыта"]].map(([k,l])=>`<option value="${k}" ${v?.status===k?"selected":""}>${l}</option>`).join("")}</select></div>
+    <div class="fl c3"><label>Отдел</label><input name="department" value="${esc(v?.department)}"></div>
+    <div class="fl c3"><label>Город</label><input name="city" value="${esc(v?.city)}"></div>
+    <div class="fl c3"><label>Зарплата от, ₽</label><input name="salary_from" type="number" value="${esc(v?.salary_from)}"></div>
+    <div class="fl c3"><label>Зарплата до, ₽</label><input name="salary_to" type="number" value="${esc(v?.salary_to)}"></div>
+    <div class="fl c6"><label>Описание / требования</label><textarea name="description" rows="8">${esc(v?.description)}</textarea></div>
+    <div class="fl c6"><label>Этапы воронки (каждый с новой строки; последний — выход на работу). Этап «Отказ» добавляется автоматически.</label><textarea name="stages" rows="7">${esc(st)}</textarea></div>
+  </form>
+  <div class="mf">${v?`<button class="btn-d" data-del style="margin-right:auto">Удалить вакансию</button>`:""}<button data-x>Отмена</button><button class="btn-p" data-save>Сохранить</button></div>`);
+  m.querySelectorAll("[data-x]").forEach(b=>b.onclick=closeModal);
+  const vf=$("#vf");vf.addEventListener("input",e=>e.target.classList.remove("filled"));
+  const drawVF=()=>{$("#vfl").innerHTML=[...vfiles.map((x,i)=>({x,i,saved:true})),...pending.map((x,i)=>({x:{name:x.name,size:x.size},i,saved:false}))].map(({x,i,saved})=>`<div class="file" data-vf="${saved?i:""}">${ic("file")}<span class="nm">${esc(x.name)}</span><span class="muted" style="font-size:12px">${x.size?Math.round(x.size/1024)+" КБ":""}${saved?"":" · будет сохранён"}</span>${saved?`<button type="button" class="btn-g btn-s" data-vopen="${i}" title="Открыть">${ic("ext")}</button>`:""}<button type="button" class="btn-g btn-s btn-d" data-vrm="${saved?"s":"p"}${i}" title="Убрать">${ic("x")}</button></div>`).join("")};
+  drawVF();
+  $("#vfl").onclick=async e=>{const o=e.target.closest("[data-vopen]");if(o){try{window.open(await store.fileUrl(vfiles[+o.dataset.vopen].path),"_blank")}catch(er){toast(er.message)}return}
+    const r=e.target.closest("[data-vrm]");if(!r)return;const k=r.dataset.vrm,i=+k.slice(1);if(k[0]==="p")pending.splice(i,1);else{const x=vfiles.splice(i,1)[0];vf._removed=(vf._removed||[]).concat(x)}drawVF()};
+  const handleV=async files=>{for(const file of files){if(!/pdf/i.test(file.type)&&!/\.pdf$/i.test(file.name)){toast("Нужен PDF-файл");continue}
+    pending.push(file);drawVF();
+    try{const lines=await pdfLines(file);if(lines.join("").replace(/\s/g,"").length<60){toast("В PDF нет текста (скан) — заполни поля вручную");continue}
+      const d=parseVacancy(lines);const set=(k,val)=>{if(val==null||val==="")return;const el=vf[k];if(!el||String(el.value).trim())return;el.value=val;el.classList.add("filled")};
+      ["title","department","city","salary_from","salary_to","description"].forEach(k=>set(k,d[k]));toast("Поля заполнены из PDF — проверь")}
+    catch(er){console.warn(er);toast("Не удалось прочитать PDF: "+er.message)}}};
+  $("#vfile").onchange=e=>{handleV([...e.target.files]);e.target.value=""};dropZone($("#vdrop"),handleV);
+  if(pickFile)setTimeout(()=>$("#vfile").click(),50);
+  m.querySelector("[data-save]").onclick=async()=>{
+    const f=$("#vf");if(!f.title.value.trim()){f.title.focus();return}
+    const stages=f.stages.value.split("\n").map(s=>s.trim()).filter(s=>s&&s!==REJECT);
+    const d={title:f.title.value.trim(),status:f.status.value,department:f.department.value.trim()||null,city:f.city.value.trim()||null,salary_from:f.salary_from.value?+f.salary_from.value:null,salary_to:f.salary_to.value?+f.salary_to.value:null,description:f.description.value.trim()||null,stages:stages.length?stages:DEFAULT_STAGES};
+    try{
+      let saved;
+      if(v){
+        saved=replace(S.vacancies,await store.update("vacancies",v.id,d));
+        // кандидаты на удалённых этапах → первый этап
+        for(const a of appsOfVac(v.id))if(a.stage!==REJECT&&!d.stages.includes(a.stage))replace(S.apps,await store.update("applications",a.id,{stage:d.stages[0],max_stage:0}));
+      } else {saved=await store.insert("vacancies",d);S.vacancies.push(saved)}
+      if(pending.length||(f._removed||[]).length){
+        for(const x of f._removed||[]){try{await store.delFile(x.path)}catch(e){}}
+        const list=[...vfiles];for(const file of pending){try{list.push(await store.upload("vacancies/"+saved.id,file))}catch(e){toast(`Файл ${file.name} не загрузился: ${e.message}`)}}
+        try{replace(S.vacancies,await store.update("vacancies",saved.id,{files:list}))}catch(e){toast("Файлы вакансии не сохранены: обнови схему базы (schema.sql)");console.warn(e)}
+      }
+      if(!v)location.hash="#vacancy-"+saved.id;
+      closeModal();toast("Вакансия сохранена");render();
+    }catch(e){toast("Ошибка: "+e.message)}
+  };
+  const del=m.querySelector("[data-del]");
+  if(del)del.onclick=async()=>{closeModal();if(!(await confirmBox("Удалить вакансию?",`«${v.title}» и вся воронка по ней будут удалены. Кандидаты останутся в базе.`)))return;
+    try{if(store.kind==="local")for(const a of appsOfVac(v.id))await store.remove("applications",a.id);await store.remove("vacancies",v.id);S.vacancies=S.vacancies.filter(x=>x.id!==v.id);S.apps=S.apps.filter(a=>a.vacancy_id!==v.id);location.hash="#vacancies";toast("Вакансия удалена");render()}catch(e){toast("Ошибка: "+e.message)}};
+}
+
+/* ---------- форма кандидата (создание) ---------- */
+function candFields(c={},opts={}){
+  const o=(arr,cur)=>`<option value=""></option>`+arr.map(x=>`<option ${cur===x?"selected":""}>${esc(x)}</option>`).join("");
+  return `
+  <div class="sec">Основное</div>
+  <div class="fl c4"><label>ФИО *</label><input name="fio" required value="${esc(c.fio)}"></div>
+  <div class="fl c2"><label>Возраст</label><input name="age" type="number" min="14" max="99" value="${esc(c.age)}"></div>
+  <div class="fl c4"><label>Должность / специализация</label><input name="position" value="${esc(c.position)}"></div>
+  <div class="fl c2"><label>Грейд</label><select name="grade">${o(GRADES,c.grade)}</select></div>
+  <div class="fl c2"><label>Опыт, лет</label><input name="experience" type="number" min="0" step="0.5" value="${esc(c.experience)}"></div>
+  <div class="fl c2"><label>Ожидания, ₽/мес</label><input name="salary" type="number" min="0" step="1000" value="${esc(c.salary)}"></div>
+  <div class="fl c2"><label>Оценка</label><div class="rate" data-rate="${c.rating||0}"></div></div>
+  <div class="fl c6"><label>Ключевые навыки (через запятую)</label><input name="skills" value="${esc((c.skills||[]).join(", "))}"></div>
+  <div class="fl c6"><label>Метки (через запятую): резерв, сильный, повторно…</label><input name="tags" value="${esc((c.tags||[]).join(", "))}" list="tagList"></div>
+  <div class="sec">Контакты</div>
+  <div class="fl c2"><label>Телефон</label><input name="phone" value="${esc(c.phone)}"></div>
+  <div class="fl c2"><label>Email</label><input name="email" type="email" value="${esc(c.email)}"></div>
+  <div class="fl c2"><label>Telegram</label><input name="telegram" value="${esc(c.telegram)}" placeholder="@username"></div>
+  <div class="fl c2"><label>Город</label><input name="city" value="${esc(c.city)}" list="cityList"></div>
+  <div class="fl c2"><label>Формат работы</label><select name="work_format">${o(FORMATS,c.work_format)}</select></div>
+  <div class="fl c2"><label>Источник</label><input name="source" value="${esc(c.source)}" list="srcList"></div>
+  <div class="fl c6"><label>Ссылка на резюме (hh.ru и т.п.)</label><input name="resume_url" type="url" value="${esc(c.resume_url)}" placeholder="https://"></div>
+  <div class="fl c6"><label>Заметки</label><textarea name="notes" rows="4">${esc(c.notes)}</textarea></div>
+  <datalist id="srcList">${[...new Set([...SOURCES,...S.candidates.map(x=>x.source).filter(Boolean)])].map(s=>`<option value="${esc(s)}">`).join("")}</datalist>
+  <datalist id="cityList">${[...new Set(S.candidates.map(x=>x.city).filter(Boolean))].map(s=>`<option value="${esc(s)}">`).join("")}</datalist>
+  <datalist id="tagList">${allTags().map(s=>`<option value="${esc(s)}">`).join("")}</datalist>`;
+}
+function wireRate(root){$$("[data-rate]",root).forEach(r=>{const draw=()=>{const v=+r.dataset.rate;r.innerHTML=[1,2,3,4,5].map(i=>`<button type="button" data-v="${i}" class="${i<=v?"on":""}">★</button>`).join("")};draw();r.onclick=e=>{const v=+e.target.dataset.v;if(!v)return;r.dataset.rate=(+r.dataset.rate===v?0:v);draw();r.dispatchEvent(new Event("change",{bubbles:true}))}})}
+function readCandForm(f){
+  const list=s=>[...new Set(s.split(/[,;\n]/).map(x=>x.trim()).filter(Boolean))];
+  const num=v=>v===""?null:+v;
+  return {fio:f.fio.value.trim(),age:num(f.age.value),position:f.position.value.trim()||null,grade:f.grade.value||null,experience:num(f.experience.value),salary:num(f.salary.value),
+    skills:list(f.skills.value),tags:list(f.tags.value),phone:f.phone.value.trim()||null,email:f.email.value.trim()||null,telegram:f.telegram.value.trim()||null,city:f.city.value.trim()||null,
+    work_format:f.work_format.value||null,source:f.source.value.trim()||null,resume_url:f.resume_url.value.trim()||null,notes:f.notes.value.trim()||null,rating:+($("[data-rate]",f)?.dataset.rate||0)};
+}
+function fillParsed(f,d){
+  const set=(k,v)=>{if(v==null||v===""||!f[k])return;if(String(f[k].value).trim())return;f[k].value=v;f[k].classList.add("filled")};
+  ["fio","age","position","experience","salary","phone","email","telegram","city","source","resume_url"].forEach(k=>set(k,d[k]));
+  if(d.grade)set("grade",d.grade);if(d.work_format)set("work_format",d.work_format);
+  if(d.skills?.length){const cur=f.skills.value.split(",").map(s=>s.trim()).filter(Boolean);const all=[...new Set([...cur,...d.skills])];if(all.length>cur.length){f.skills.value=all.join(", ");f.skills.classList.add("filled")}}
+}
+function newCandidateModal(vid){
+  let pending=[];
+  const m=openModal(`<div class="mh"><h3>Новый кандидат${vid?` → ${esc(vac(vid)?.title)}`:""}</h3><button class="btn-g" data-x aria-label="Закрыть">${ic("x")}</button></div>
+  <form class="mb grid" id="cf" autocomplete="off">
+    <div class="c6"><div class="drop" id="cdrop">${ic("file","lg")}<div>Перетащи PDF резюме или <label>выбери файл<input type="file" id="cfile" accept=".pdf,image/*,.doc,.docx,.txt" hidden multiple></label><br><small>Резюме с hh.ru заполнит поля автоматически</small><div class="progress" id="cprog"></div></div></div></div>
+    ${candFields({source:""})}
+    ${!vid&&S.vacancies.some(v=>v.status!=="closed")?`<div class="sec">Вакансия</div><div class="fl c6"><label>Добавить на вакансию (необязательно)</label><select name="vac"><option value=""></option>${S.vacancies.filter(v=>v.status!=="closed").map(v=>`<option value="${v.id}">${esc(v.title)}</option>`).join("")}</select></div>`:""}
+  </form>
+  <div class="mf"><button data-x>Отмена</button><button class="btn-p" data-save>Сохранить</button></div>`);
+  const f=$("#cf");wireRate(m);
+  f.addEventListener("input",e=>e.target.classList.remove("filled"));
+  m.querySelectorAll("[data-x]").forEach(b=>b.onclick=closeModal);
+  const handle=async files=>{
+    for(const file of files){
+      pending.push(file);$("#cprog").textContent=`Прикреплено: ${pending.map(p=>p.name).join(", ")}`;
+      try{const d=await parseFile(file);if(d._scan){toast("PDF — скан без текста: заполни поля вручную");continue}
+        if(Object.keys(d).length){fillParsed(f,d);toast("Поля заполнены из резюме — проверь")}
+        const dup=findDuplicate({email:f.email.value,phone:f.phone.value});if(dup)toast(`Похоже, уже есть в базе: ${dup.fio}`,4000);
+      }catch(e){console.warn(e);toast("Не удалось прочитать PDF: "+e.message)}
+    }
+  };
+  $("#cfile").onchange=e=>{handle([...e.target.files]);e.target.value=""};
+  dropZone($("#cdrop"),handle);
+  m.querySelector("[data-save]").onclick=async e=>{
+    const d=readCandForm(f);if(!d.fio){f.fio.focus();toast("Укажи ФИО");return}
+    const btn=e.target;btn.disabled=true;btn.textContent="Сохраняю…";
+    try{
+      const c=await saveCandidate(d);
+      await attachFiles(c.id,pending);
+      const target=vid||f.vac?.value;if(target)await addToVacancy(c.id,target);
+      closeModal();toast("Кандидат добавлен");render();openDrawer(c.id);
+    }catch(err){toast("Ошибка: "+err.message);btn.disabled=false;btn.textContent="Сохранить"}
+  };
+}
+async function attachFiles(cid,files){
+  if(!files.length)return;
+  let c=cand(cid);const list=[...(c.files||[])];
+  for(const file of files){if(file.size>25*1024*1024){toast(`${file.name}: больше 25 МБ`);continue}
+    try{const meta=await store.upload(cid,file);list.push(meta);await addEvent(cid,"file",`Загружен файл: ${file.name}`)}catch(e){toast(`Не удалось загрузить ${file.name}: ${e.message}`)}}
+  await saveCandidate({files:list},cid);
+}
+function dropZone(el,cb){["dragenter","dragover"].forEach(t=>el.addEventListener(t,e=>{e.preventDefault();el.classList.add("over")}));["dragleave","drop"].forEach(t=>el.addEventListener(t,e=>{e.preventDefault();el.classList.remove("over")}));el.addEventListener("drop",e=>cb([...e.dataTransfer.files]))}
+
+/* ---------- массовая загрузка резюме ---------- */
+function bulkModal(vid){
+  const m=openModal(`<div class="mh"><h3>Загрузка резюме${vid?` → ${esc(vac(vid)?.title)}`:""}</h3><button class="btn-g" data-x aria-label="Закрыть">${ic("x")}</button></div>
+  <div class="mb"><div class="drop" id="bdrop" style="padding:38px">${ic("upload","lg")}<div>Перетащи сюда один или несколько PDF-резюме или <label>выбери файлы<input type="file" id="bfile" accept=".pdf" multiple hidden></label><br><small>Каждое резюме станет карточкой кандидата. Дубликаты (тот же email или телефон) обновятся, а не создадутся заново.</small></div></div>
+  <div id="blog" class="blog"></div></div>
+  <div class="mf"><button data-x>Готово</button></div>`);
+  m.querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>{closeModal();render()});
+  const log=(t,cls="")=>{$("#blog").insertAdjacentHTML("beforeend",`<div class="${cls}">${t}</div>`)};
+  const run=async files=>{
+    for(const file of files){
+      try{
+        const d=await parseFile(file);delete d._scan;
+        if(!d.fio)d.fio=fioFromFileName(file.name);
+        let c=findDuplicate(d),isNew=!c;
+        if(c){const patch={};for(const[k,v]of Object.entries(d)){if(v!=null&&v!==""&&(c[k]==null||c[k]===""||(Array.isArray(c[k])&&!c[k].length)))patch[k]=v}if(Object.keys(patch).length)c=await saveCandidate(patch,c.id)}
+        else c=await saveCandidate(d);
+        await attachFiles(c.id,[file]);
+        if(vid)await addToVacancy(c.id,vid);
+        log(`${isNew?ic("check","okc"):ic("refresh","upd")} <b>${esc(c.fio)}</b> <span class="muted">${esc([c.position,c.city].filter(Boolean).join(" · "))}${isNew?"":" — уже был в базе, обновлён"}</span>`);
+      }catch(e){log(`${ic("warn","err")} ${esc(file.name)}: ${esc(e.message)}`)}
+    }
+    render();
+  };
+  $("#bfile").onchange=e=>{run([...e.target.files]);e.target.value=""};
+  dropZone($("#bdrop"),run);
+}
+
+/* ---------- выбрать кандидата из базы ---------- */
+function pickFromBaseModal(vid){
+  const m=openModal(`<div class="mh"><h3>Добавить из базы → ${esc(vac(vid)?.title)}</h3><button class="btn-g" data-x aria-label="Закрыть">${ic("x")}</button></div>
+  <div class="mb"><input type="search" id="pq" placeholder="Поиск по имени, должности, навыкам…"><div class="picklist" id="pl"></div></div>
+  <div class="mf"><button data-x>Готово</button></div>`);
+  m.querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>{closeModal();render()});
+  const draw=()=>{const q=$("#pq").value.toLowerCase();const inV=new Set(appsOfVac(vid).map(a=>a.candidate_id));
+    const list=S.candidates.filter(c=>!q||hay(c).includes(q)).slice(0,200);
+    $("#pl").innerHTML=list.map(c=>`<div class="pick ${inV.has(c.id)?"dis":""}" data-id="${c.id}"><div class="ava sm">${esc(initials(c.fio))}</div><div style="flex:1"><b>${esc(c.fio)}</b><div class="muted" style="font-size:12.5px">${esc([c.position,c.grade,c.city].filter(Boolean).join(" · "))}</div></div>${inV.has(c.id)?'<span class="muted" style="font-size:12px">уже на вакансии</span>':'<button class="btn-s">Добавить</button>'}</div>`).join("")||`<div class="pick muted">Никого не найдено</div>`};
+  $("#pq").oninput=draw;draw();
+  $("#pl").onclick=async e=>{const p=e.target.closest(".pick");if(!p||p.classList.contains("dis")||!p.dataset.id)return;await addToVacancy(p.dataset.id,vid);toast("Добавлен");draw()};
+}
+
+/* ================= КАРТОЧКА КАНДИДАТА ================= */
+function openDrawer(cid,tab){UI.drawerCand=cid;if(tab)UI.drawerTab=tab;$("#ovl").classList.add("open");$("#drawer").classList.add("open");renderDrawer()}
+function closeDrawer(){UI.drawerCand=null;$("#ovl").classList.remove("open");$("#drawer").classList.remove("open");render()}
+$("#ovl").onclick=closeDrawer;
+function renderDrawer(){
+  const c=cand(UI.drawerCand);const d=$("#drawer");if(!c){closeDrawer();return}
+  const apps=appsOfCand(c.id);const evs=S.events.filter(e=>e.candidate_id===c.id).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  const t=UI.drawerTab;
+  d.innerHTML=`<div class="dh">
+    <div class="dh-top"><div class="ava">${esc(initials(c.fio))}</div>
+      <div style="flex:1;min-width:0"><h2>${esc(c.fio)}</h2><div class="sub">${esc([c.position,c.grade,c.experience!=null?c.experience+" "+plural(Math.floor(c.experience),"год","года","лет")+" опыта":"",money(c.salary)].filter(Boolean).join(" · "))}</div>
+      <div class="contacts">${stars(c.rating)}${(c.tags||[]).map(x=>`<span class="tag">${esc(x)}</span>`).join("")}
+      ${c.phone?`<a href="tel:${esc(c.phone)}">${ic("phone")}${esc(c.phone)}</a>`:""}${c.email?`<a href="mailto:${esc(c.email)}">${ic("mail")}${esc(c.email)}</a>`:""}${c.telegram?`<a href="https://t.me/${esc(c.telegram.replace(/^@/,""))}" target="_blank">${ic("send")}${esc(c.telegram)}</a>`:""}</div></div>
+      <button class="btn-g" id="dx" aria-label="Закрыть">${ic("x","lg")}</button></div>
+    <div class="apps">${apps.map(a=>{const v=vac(a.vacancy_id);if(!v)return"";const st=stagesOf(v);return `<div class="app-row"><span class="t">${ic("brief")}${esc(v.title)}</span>${a.stage===REJECT?`<span class="chip rej" title="${esc(a.rejected_reason)}">Отказ</span>`:""}<select data-app="${a.id}">${[...st,REJECT].map(s=>`<option ${s===a.stage?"selected":""}>${esc(s)}</option>`).join("")}</select><span class="muted" style="font-size:12px">${days(a.stage_changed_at)} дн.</span><button class="btn-g btn-s" data-unapp="${a.id}" title="Убрать с вакансии">${ic("x")}</button></div>`}).join("")}
+      ${upcomingOf(c.id).map(m=>`<div class="app-row meet-row" data-mopen="${m.id}"><span class="t">${ic("cal")}${esc(m.kind)} · ${fmtMeetShort(m)}</span><span class="muted" style="font-size:12.5px;display:inline-flex;gap:5px;align-items:center">${ic(m.format==="online"?"video":"pin")}${m.format==="online"?"онлайн":"офлайн"}</span><span style="display:inline-flex">${(m.interviewer_ids||[]).map(i=>ivDot(ivById(i),20)).join("")}</span>${m.format==="online"&&m.link?`<a class="btn-s btnlink" href="${esc(m.link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${ic("ext")}</a>`:""}</div>`).join("")}
+      <div style="display:flex;gap:6px"><button class="btn-s" id="addVac">${ic("plus")}На вакансию</button><button class="btn-s" id="addMeet">${ic("cal")}Назначить встречу</button></div></div>
+    <div class="tabs">${[["profile","Профиль"],["resume",`Резюме ${c.files?.length?`<span>${c.files.length}</span>`:""}`],["history",`История <span>${evs.length}</span>`]].map(([k,l])=>`<button data-tab="${k}" class="${t===k?"on":""}">${l}</button>`).join("")}</div>
+  </div><div class="db" id="dbody"></div>`;
+  $("#dx").onclick=closeDrawer;
+  $$("[data-tab]",d).forEach(b=>b.onclick=()=>{UI.drawerTab=b.dataset.tab;renderDrawer()});
+  $$("[data-app]",d).forEach(s=>s.onchange=async()=>{const a=byId(S.apps,s.dataset.app);let reason=null;if(s.value===REJECT){reason=await rejectBox(c.fio);if(reason===null){s.value=a.stage;return}}await moveApp(a.id,s.value,reason);renderDrawer();render()});
+  $$("[data-unapp]",d).forEach(b=>b.onclick=async()=>{if(!(await confirmBox("Убрать с вакансии?","Кандидат останется в базе, история сохранится.","Убрать")))return;await removeApp(b.dataset.unapp);renderDrawer();render()});
+  $("#addMeet").onclick=()=>meetingModal(null,{candidate_id:c.id,vacancy_id:(apps.find(a=>a.stage!==REJECT)||{}).vacancy_id||""});
+  $$("[data-mopen]",d).forEach(r=>r.onclick=()=>meetingModal(byId(S.meetings,r.dataset.mopen)));
+  $("#addVac").onclick=()=>{const opts=S.vacancies.filter(v=>v.status!=="closed"&&!apps.some(a=>a.vacancy_id===v.id));if(!opts.length){toast("Нет открытых вакансий, куда его можно добавить");return}
+    const m=openModal(`<div class="mh"><h3>Добавить на вакансию</h3></div><div class="mb"><select id="av">${opts.map(v=>`<option value="${v.id}">${esc(v.title)}</option>`).join("")}</select></div><div class="mf"><button data-a="no">Отмена</button><button class="btn-p" data-a="ok">Добавить</button></div>`,"sm");
+    m.onclick=async e=>{const a=e.target.dataset.a;if(!a)return;const vid=$("#av").value;closeModal();if(a==="ok"){await addToVacancy(c.id,vid);toast("Добавлен на вакансию");renderDrawer();render()}}};
+  const b=$("#dbody");
+  if(t==="profile"){
+    b.innerHTML=`<form class="grid" id="pf" autocomplete="off">${candFields(c)}</form>
+    <div class="savebar"><button class="btn-d" id="pdel">${ic("trash")}Удалить</button><div style="display:flex;gap:8px"><span class="muted" id="pst" style="align-self:center;font-size:12.5px"></span><button class="btn-p" id="psave">Сохранить</button></div></div>
+    <div class="muted" style="font-size:12px;margin-top:14px">Добавлен ${fmtD(c.created_at)}${c.created_by?` · ${esc(c.created_by)}`:""} · обновлён ${fmtDT(c.updated_at)}</div>`;
+    const f=$("#pf");wireRate(b);
+    f.addEventListener("input",()=>$("#pst").textContent="Есть несохранённые изменения");f.addEventListener("change",()=>$("#pst").textContent="Есть несохранённые изменения");
+    $("#psave").onclick=async()=>{const d=readCandForm(f);if(!d.fio){toast("Укажи ФИО");return}
+      const changed=Object.keys(d).filter(k=>JSON.stringify(d[k]??null)!==JSON.stringify(c[k]??null));
+      if(!changed.length){toast("Изменений нет");return}
+      try{await saveCandidate(d,c.id);await addEvent(c.id,"edit","Изменены поля: "+changed.map(k=>FIELD_NAMES[k]||k).join(", "));toast("Сохранено");renderDrawer();render()}catch(e){toast("Ошибка: "+e.message)}};
+    $("#pdel").onclick=async()=>{if(!(await confirmBox("Удалить кандидата?",`${c.fio}: карточка, файлы и история будут удалены безвозвратно.`)))return;try{await deleteCandidate(c.id);toast("Удалено");closeDrawer()}catch(e){toast("Ошибка: "+e.message)}};
+  }
+  if(t==="resume"){
+    b.innerHTML=`<div class="drop" id="rdrop">${ic("upload","lg")}<div>Перетащи файл резюме или <label>выбери<input type="file" id="rfile" accept=".pdf,image/*,.doc,.docx,.txt" multiple hidden></label><br><small>PDF и изображения открываются прямо здесь. Пустые поля профиля заполнятся из PDF.</small></div></div>
+    <div class="files">${(c.files||[]).map((x,i)=>`<div class="file" data-i="${i}">${/image/.test(x.type)?ic("image"):ic("file")}<span class="nm">${esc(x.name)}</span><span class="muted" style="font-size:12px">${x.size?Math.round(x.size/1024)+" КБ":""} · ${fmtD(x.at)}</span><button class="btn-g btn-s" data-open="${i}" title="Открыть в новой вкладке">${ic("ext")}</button><button class="btn-g btn-s btn-d" data-rm="${i}" title="Удалить файл">${ic("trash")}</button></div>`).join("")||'<div class="muted" style="text-align:center;padding:10px">Файлов пока нет</div>'}</div>
+    <div id="pv"></div>`;
+    const showPv=async i=>{const x=c.files[i];$$(".file",b).forEach(e=>e.classList.toggle("on",+e.dataset.i===i));$("#pv").innerHTML='<div class="muted">Загружаю…</div>';
+      try{const url=await store.fileUrl(x.path);if(/pdf/.test(x.type)||/\.pdf$/i.test(x.name))$("#pv").innerHTML=`<iframe class="preview" src="${esc(url)}"></iframe>`;else if(/image/.test(x.type))$("#pv").innerHTML=`<img class="preview-img" src="${esc(url)}">`;else $("#pv").innerHTML=`<a href="${esc(url)}" target="_blank" download="${esc(x.name)}">Скачать ${esc(x.name)}</a>`}catch(e){$("#pv").innerHTML=`<div class="muted">Не удалось открыть: ${esc(e.message)}</div>`}};
+    $$(".file",b).forEach(e=>e.onclick=ev=>{if(ev.target.closest("button"))return;showPv(+e.dataset.i)});
+    $$("[data-open]",b).forEach(e=>e.onclick=async()=>{try{const u=await store.fileUrl(c.files[+e.dataset.open].path);window.open(u,"_blank")}catch(er){toast(er.message)}});
+    $$("[data-rm]",b).forEach(e=>e.onclick=async()=>{const x=c.files[+e.dataset.rm];if(!(await confirmBox("Удалить файл?",x.name)))return;try{await store.delFile(x.path)}catch(er){}await saveCandidate({files:c.files.filter(f=>f!==x)},c.id);await addEvent(c.id,"file",`Удалён файл: ${x.name}`);renderDrawer()});
+    const up=async files=>{toast("Загружаю…");
+      for(const file of files){try{const d=await parseFile(file);delete d._scan;const cur=cand(c.id);const patch={};for(const[k,v]of Object.entries(d)){if(v!=null&&v!==""&&(cur[k]==null||cur[k]===""||(Array.isArray(cur[k])&&!cur[k].length)))patch[k]=v}if(Object.keys(patch).length){await saveCandidate(patch,c.id);toast("Пустые поля профиля заполнены из резюме")}}catch(e){}}
+      await attachFiles(c.id,files);renderDrawer();if(cand(c.id).files.length)showPv(cand(c.id).files.length-1)};
+    $("#rfile").onchange=e=>{up([...e.target.files]);e.target.value=""};dropZone($("#rdrop"),up);
+    if(c.files?.length)showPv(0);
+  }
+  if(t==="history"){
+    const EVI={meeting:"cal",created:"spark",comment:"msg",stage:"arrow",vacancy:"brief",file:"clip",reject:"ban",edit:"edit"};
+    b.innerHTML=`<div class="cbox"><textarea id="cm" rows="3" placeholder="Комментарий: впечатления после звонка, итоги интервью… (Ctrl+Enter — отправить)"></textarea><div style="display:flex;justify-content:flex-end;gap:8px"><select id="cmv" style="width:auto"><option value="">Без привязки к вакансии</option>${apps.map(a=>`<option value="${a.vacancy_id}">${esc(vac(a.vacancy_id)?.title)}</option>`).join("")}</select><button class="btn-p" id="cms">${ic("msg")}Добавить</button></div></div>
+    <div class="tl">${evs.map(e=>`<div class="ev ${esc(e.type)}"><div class="ic-w ${esc(e.type)}">${ic(EVI[e.type]||"spark")}</div><div class="w"><div class="h">${fmtDT(e.created_at)} · ${esc(e.author_email||"")}${e.vacancy_id&&e.type==="comment"?` · ${esc(vac(e.vacancy_id)?.title||"")}`:""}</div><div class="x">${esc(e.text)}</div></div></div>`).join("")||'<div class="muted">Событий пока нет</div>'}</div>`;
+    const send=async()=>{const v=$("#cm").value.trim();if(!v)return;await addEvent(c.id,"comment",v,null,$("#cmv").value||null);renderDrawer()};
+    $("#cms").onclick=send;$("#cm").onkeydown=e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey))send()};
+  }
+}
+const FIELD_NAMES={fio:"ФИО",age:"возраст",position:"должность",grade:"грейд",experience:"опыт",salary:"зарплата",skills:"навыки",tags:"метки",phone:"телефон",email:"email",telegram:"telegram",city:"город",work_format:"формат",source:"источник",resume_url:"ссылка",notes:"заметки",rating:"оценка"};
+
+/* ================= ЭКРАНЫ ================= */
+const hay=c=>[c.fio,c.position,c.city,c.email,c.phone,c.telegram,c.notes,c.source,(c.skills||[]).join(" "),(c.tags||[]).join(" ")].join(" ").toLowerCase();
+const allTags=()=>[...new Set(S.candidates.flatMap(c=>c.tags||[]))].sort((a,b)=>a.localeCompare(b,"ru"));
+
+function shell(title,actions,body,active){
+  const nOpen=S.vacancies.filter(v=>v.status==="open").length;
+  const dark=document.documentElement.dataset.theme==="dark";
+  return `<div id="app"><aside><div class="logo"><i>${ic("check")}</i>${esc(CFG.COMPANY||"Найм")}</div>
+  <nav><a href="#vacancies" class="${active==="vac"?"on":""}">${ic("brief")}Вакансии<b>${nOpen}</b></a><a href="#candidates" class="${active==="cand"?"on":""}">${ic("users")}Кандидаты<b>${S.candidates.length}</b></a><a href="#calendar" class="${active==="cal"?"on":""}">${ic("cal")}Календарь<b>${S.meetings.filter(m=>m.status==="planned"&&sameDay(m.starts_at,new Date())).length||""}</b></a><a href="#analytics" class="${active==="an"?"on":""}">${ic("chart")}Аналитика</a></nav>
+  <div class="side-foot">${store.kind==="local"?'<div><span class="mode">Демо</span>данные только в этом браузере</div>':`<div class="who">${esc(S.user?.email||"")}</div>`}
+  <div class="row"><button id="themeBtn" title="Тема">${ic(dark?"sun":"moon")}</button>${store.kind==="supabase"?`<button id="logout">${ic("out")}Выйти</button>`:`<button id="exportBtn" title="Скачать резервную копию">${ic("down")}Копия</button>`}</div>
+  <div style="color:#5C5C5C"><kbd>/</kbd> поиск · <kbd>N</kbd> новый кандидат</div></div></aside>
+  <main><div class="top"><h1>${title}</h1>${actions}</div><div class="content">${body}</div></main></div>`;
+}
+
+function viewVacancies(){
+  const f=UI.vacFilter;
+  const list=S.vacancies.filter(v=>f==="all"||v.status===f).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  const body=`<div class="toolbar"><div class="seg">${[["open","Открытые"],["paused","На паузе"],["closed","Закрытые"],["all","Все"]].map(([k,l])=>`<button data-vf="${k}" class="${f===k?"on":""}">${l} <span class="muted">${k==="all"?S.vacancies.length:S.vacancies.filter(v=>v.status===k).length}</span></button>`).join("")}</div></div>
+  ${list.length?`<div class="vgrid">${list.map(v=>{const st=stagesOf(v),apps=appsOfVac(v.id),act=apps.filter(a=>a.stage!==REJECT);const hired=apps.filter(a=>a.stage===st[st.length-1]).length;const nw=apps.filter(a=>a.stage===st[0]).length;
+    return `<div class="vcard" data-v="${v.id}"><div class="vhead"><h3 title="${esc(v.title)}">${esc(v.title)}</h3><span class="chip ${esc(v.status)}">${{open:"Открыта",paused:"На паузе",closed:"Закрыта"}[v.status]||v.status}</span></div>
+    <div class="vsub"><div class="vmeta" title="${esc([v.department,v.city].filter(Boolean).join(", "))}">${esc([v.department,v.city,v.salary_from||v.salary_to?`${v.salary_from?"от "+money(v.salary_from):""} ${v.salary_to?"до "+money(v.salary_to):""}`.trim():""].filter(Boolean).join(" · "))||"&nbsp;"}</div><span class="vage" title="Сколько дней открыта вакансия">${ic("clock")}${days(v.created_at)} дн.</span></div>
+    <div class="vbar">${act.length?st.map((s,i)=>{const n=act.filter(a=>a.stage===s).length;return n?`<i style="flex:${n};background:${stageColor(i,st.length)}" title="${esc(s)}: ${n}"></i>`:""}).join(""):""}</div>
+    <div class="vstat"><div><b>${act.length}</b>в работе</div><div class="${nw?"hot":""}"><b>${nw}</b>новых</div><div><b>${hired}</b>вышли</div><div><b>${apps.length-act.length}</b>отказ</div></div></div>`}).join("")}</div>`
+  :`<div class="empty">${ic("brief")}<b>Вакансий пока нет</b><span>Создайте первую — и добавляйте на неё кандидатов</span><div class="row"><button class="btn-p" id="nv2">${ic("plus")}Создать вакансию</button></div></div>`}`;
+  return shell("Вакансии",`<button id="nvPdf">${ic("upload")}Из PDF</button><button class="btn-p" id="nv">${ic("plus")}Вакансия</button>`,body,"vac");
+}
+
+function viewBoard(vid){
+  const v=vac(vid);if(!v)return viewVacancies();
+  const st=stagesOf(v),cols=[...st,REJECT],q=UI.boardQ.toLowerCase();
+  const apps=appsOfVac(vid).filter(a=>{const c=cand(a.candidate_id);return c&&(!q||hay(c).includes(q))});
+  const body=`<div class="toolbar"><div class="search">${ic("search")}<input type="search" id="bq" placeholder="Поиск в воронке" value="${esc(UI.boardQ)}"></div><span class="muted" style="font-size:13px">${esc([v.department,v.city,v.salary_from?"от "+money(v.salary_from):"",v.salary_to?"до "+money(v.salary_to):""].filter(Boolean).join(" · "))}</span>${(v.files||[]).map((x,i)=>`<button class="btn-s" data-vdoc="${i}" title="Открыть описание вакансии">${ic("file")}${esc(x.name.length>28?x.name.slice(0,26)+"…":x.name)}</button>`).join("")}</div>
+  <div class="board">${cols.map((s,i)=>{const items=apps.filter(a=>a.stage===s).sort((a,b)=>new Date(b.stage_changed_at)-new Date(a.stage_changed_at));
+    return `<div class="col ${s===REJECT?"rej":""}" data-stage="${esc(s)}"><div class="col-h" style="${s===REJECT?"":`border-top-color:${stageColor(i,st.length)}`}"><span class="nm">${esc(s)}</span><span class="cnt">${items.length}</span></div>
+    <div class="col-b">${items.length?"":`<div class="col-empty">Перетащите сюда</div>`}${items.map(a=>{const c=cand(a.candidate_id);const dd=days(a.stage_changed_at);return `<div class="kc" draggable="true" data-app="${a.id}" data-c="${c.id}"><div class="hd"><div class="ava sm">${esc(initials(c.fio))}</div><div style="min-width:0"><div class="n">${esc(c.fio)}</div><div class="p">${esc([c.position,c.grade].filter(Boolean).join(", "))||"&nbsp;"}</div></div></div>${(c.tags||[]).length?`<div>${c.tags.slice(0,3).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>`:""}${a.stage===REJECT&&a.rejected_reason?`<div class="rr">${esc(a.rejected_reason)}</div>`:""}${(()=>{const nm=upcomingOf(c.id)[0];return nm&&a.stage!==REJECT?`<div class="kmeet">${ic("cal")}${fmtMeetShort(nm)} ${ic(nm.format==="online"?"video":"pin")}</div>`:""})()}<div class="f">${stars(c.rating)}<span class="d ${dd>7&&s!==REJECT&&i<st.length-1?"late":""}" title="Дней на этапе">${c.files?.length?ic("clip"):""}${ic("clock")}${dd} дн.</span></div></div>`}).join("")}</div></div>`}).join("")}</div>`;
+  return shell(`<a href="#vacancies" class="crumb">Вакансии</a><span class="muted">/</span>${esc(v.title)} <span class="chip ${esc(v.status)}">${{open:"Открыта",paused:"На паузе",closed:"Закрыта"}[v.status]}</span>`,
+    `<button class="btn-g" id="editV" title="Настройки вакансии">${ic("sliders","lg")}</button><button id="pickB">${ic("db")}Из базы</button><button id="bulkB">${ic("upload")}Резюме</button><button class="btn-p" id="newC">${ic("plus")}Кандидат</button>`,body,"vac");
+}
+
+function viewCandidates(){
+  const F=UI.candF,q=UI.candQ.toLowerCase();
+  let list=S.candidates.filter(c=>{
+    if(q&&!q.split(/\s+/).every(w=>hay(c).includes(w)))return false;
+    if(F.grade&&c.grade!==F.grade)return false;if(F.source&&c.source!==F.source)return false;if(F.city&&c.city!==F.city)return false;
+    if(F.tag&&!(c.tags||[]).includes(F.tag))return false;
+    if(F.vac==="none"&&appsOfCand(c.id).length)return false;
+    if(F.vac&&F.vac!=="none"&&!appsOfCand(c.id).some(a=>a.vacancy_id===F.vac))return false;
+    return true});
+  const {k,d}=UI.candSort;
+  list.sort((a,b)=>{let x=a[k],y=b[k];if(k==="updated_at"||k==="created_at"){x=new Date(x||0);y=new Date(y||0)}if(x==null||x==="")return 1;if(y==null||y==="")return -1;return (typeof x==="string"?x.localeCompare(y,"ru"):x-y)*d});
+  const opt=(arr,cur,label)=>`<option value="">${label}</option>`+arr.map(x=>`<option ${cur===x?"selected":""}>${esc(x)}</option>`).join("");
+  const uniq=key=>[...new Set(S.candidates.map(c=>c[key]).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),"ru"));
+  const th=(key,l)=>`<th data-sort="${key}" class="${k===key?"on":""}">${l} ${k===key?ic(d>0?"up":"dn"):""}</th>`;
+  const body=`<div class="toolbar"><div class="search">${ic("search")}<input type="search" id="cq" placeholder="Имя, навык, город, заметки" value="${esc(UI.candQ)}"></div>
+    <select id="fg">${opt(GRADES,F.grade,"Грейд")}</select><select id="fs">${opt(uniq("source"),F.source,"Источник")}</select><select id="fc">${opt(uniq("city"),F.city,"Город")}</select><select id="ft">${opt(allTags(),F.tag,"Метка")}</select>
+    <select id="fv"><option value="">Любая вакансия</option><option value="none" ${F.vac==="none"?"selected":""}>Без вакансии (резерв)</option>${S.vacancies.map(v=>`<option value="${v.id}" ${F.vac===v.id?"selected":""}>${esc(v.title)}</option>`).join("")}</select>
+    <span class="muted" style="font-size:13px;margin-left:auto">${list.length} из ${S.candidates.length}</span></div>
+  ${S.candidates.length?`<div class="tblwrap"><table class="tbl"><thead><tr>${th("fio","Кандидат")}${th("grade","Грейд")}${th("experience","Опыт")}${th("salary","Ожидания")}${th("city","Город")}<th>Вакансии</th>${th("rating","Оценка")}${th("updated_at","Обновлён")}</tr></thead>
+  <tbody>${list.slice(0,500).map(c=>{const apps=appsOfCand(c.id);return `<tr data-c="${c.id}"><td><div class="who-cell"><div class="ava sm">${esc(initials(c.fio))}</div><div><div class="n">${esc(c.fio)}</div><div class="muted" style="font-size:12.5px">${esc(c.position||"")}</div><div style="margin-top:5px">${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}${(c.skills||[]).slice(0,4).map(s=>`<span class="skill">${esc(s)}</span>`).join("")}</div></div></div></td>
+    <td>${esc(c.grade||"")}</td><td>${c.experience!=null?esc(c.experience)+" г.":""}</td><td style="white-space:nowrap">${money(c.salary)}</td><td>${esc(c.city||"")}</td>
+    <td style="font-size:12.5px">${apps.map(a=>`<div>${esc(vac(a.vacancy_id)?.title||"")} <span class="${a.stage===REJECT?"btn-d":"muted"}">${esc(a.stage)}</span></div>`).join("")||'<span class="muted">Резерв</span>'}</td>
+    <td>${stars(c.rating)}</td><td class="muted" style="white-space:nowrap;font-size:12.5px">${fmtD(c.updated_at)}</td></tr>`}).join("")}</tbody></table></div>${list.length>500?'<div class="muted" style="margin-top:8px">Показаны первые 500 — уточни поиск.</div>':""}`
+  :`<div class="empty">${ic("users")}<b>В базе пока никого</b><span>Загрузите PDF-резюме — карточки заполнятся сами</span><div class="row"><button class="btn-p" id="bulk2">${ic("upload")}Загрузить резюме</button><button id="nc2">${ic("plus")}Добавить вручную</button></div></div>`}`;
+  return shell("Кандидаты",`<button class="btn-g" id="csvC" title="Экспорт в CSV">${ic("down","lg")}</button><button id="bulkC">${ic("upload")}Резюме</button><button class="btn-p" id="newC">${ic("plus")}Кандидат</button>`,body,"cand");
+}
+
+function viewAnalytics(){
+  const vSel=UI.anVac||(S.vacancies.find(v=>v.status==="open")||S.vacancies[0])?.id||"";
+  const period=UI.anPeriod||"all";
+  const since=period==="all"?0:Date.now()-(+period)*864e5;
+  const inP=d=>new Date(d).getTime()>=since;
+  const apps=S.apps.filter(a=>inP(a.created_at));
+  const lastStage=a=>{const st=stagesOf(vac(a.vacancy_id));return st[st.length-1]};
+  const hired=apps.filter(a=>a.stage===lastStage(a));
+  const tth=hired.map(a=>(new Date(a.stage_changed_at)-new Date(a.created_at))/864e5);
+  const avgT=tth.length?Math.round(tth.reduce((s,x)=>s+x,0)/tth.length):null;
+  const newC=S.candidates.filter(c=>inP(c.created_at)).length;
+  const rej=apps.filter(a=>a.stage===REJECT);
+  // воронка
+  const v=vac(vSel),st=stagesOf(v),va=apps.filter(a=>a.vacancy_id===vSel);
+  const reached=st.map((s,i)=>va.filter(a=>(a.max_stage||0)>=i||(a.stage!==REJECT&&st.indexOf(a.stage)>=i)).length);
+  const top=reached[0]||1;
+  // источники
+  const src={};apps.forEach(a=>{const c=cand(a.candidate_id);const s=c?.source||"Не указан";src[s]=src[s]||{n:0,h:0,r:0};src[s].n++;if(a.stage===lastStage(a))src[s].h++;if(a.stage===REJECT)src[s].r++});
+  S.candidates.filter(c=>inP(c.created_at)&&!appsOfCand(c.id).length).forEach(c=>{const s=c.source||"Не указан";src[s]=src[s]||{n:0,h:0,r:0}});
+  const srcRows=Object.entries(src).sort((a,b)=>b[1].n-a[1].n);
+  // причины отказа
+  const rr={};rej.forEach(a=>{const r=(a.rejected_reason||"Не указана").split(" — ")[0];rr[r]=(rr[r]||0)+1});
+  const rrRows=Object.entries(rr).sort((a,b)=>b[1]-a[1]);
+  // по неделям
+  const wk=[];for(let i=11;i>=0;i--){const end=new Date();end.setHours(23,59,59,999);end.setDate(end.getDate()-i*7);const start=new Date(end);start.setDate(start.getDate()-6);start.setHours(0,0,0,0);wk.push({l:start.toLocaleDateString("ru-RU",{day:"2-digit",month:"2-digit"}),n:S.candidates.filter(c=>{const t=new Date(c.created_at);return t>=start&&t<=end}).length})}
+  const wmax=Math.max(1,...wk.map(w=>w.n));
+  // по вакансиям
+  const vRows=S.vacancies.filter(x=>x.status!=="closed").map(x=>{const a=apps.filter(p=>p.vacancy_id===x.id),s=stagesOf(x);return {t:x.title,n:a.length,act:a.filter(p=>p.stage!==REJECT&&p.stage!==s[s.length-1]).length,h:a.filter(p=>p.stage===s[s.length-1]).length,d:days(x.created_at)}});
+  const body=`<div class="toolbar"><div class="seg">${[["30","30 дней"],["90","Квартал"],["365","Год"],["all","Всё время"]].map(([k,l])=>`<button data-per="${k}" class="${period===k?"on":""}">${l}</button>`).join("")}</div></div>
+  <div class="kpis">
+    <div class="kpi"><div class="l">Новых кандидатов</div><div class="v">${newC}</div></div>
+    <div class="kpi"><div class="l">Открытых вакансий</div><div class="v">${S.vacancies.filter(x=>x.status==="open").length}</div></div>
+    <div class="kpi"><div class="l">В работе сейчас</div><div class="v">${apps.filter(a=>a.stage!==REJECT&&a.stage!==lastStage(a)).length}</div></div>
+    <div class="kpi accent"><div class="l">Вышли на работу</div><div class="v">${hired.length}</div></div>
+    <div class="kpi"><div class="l">Среднее время найма</div><div class="v">${avgT!=null?avgT+"<small>дн.</small>":"—"}</div></div>
+    <div class="kpi"><div class="l">Доля отказов</div><div class="v">${apps.length?Math.round(rej.length/apps.length*100)+"%":"—"}</div></div>
+  </div>
+  <div class="panels">
+    <div class="panel" style="grid-column:1/-1"><h3>Воронка по вакансии <select id="anv">${S.vacancies.map(x=>`<option value="${x.id}" ${x.id===vSel?"selected":""}>${esc(x.title)}</option>`).join("")||"<option>Нет вакансий</option>"}</select></h3>
+      ${v&&va.length?`<div class="fun">${st.map((s,i)=>`<div class="fun-r"><span>${esc(s)}</span><div class="fun-b"><i style="width:${reached[i]/top*100}%;background:${stageColor(i,st.length)}"></i></div><span class="pc"><b>${reached[i]}</b>${i===0?"100%":Math.round(reached[i]/(reached[i-1]||1)*100)+"%"}</span></div>`).join("")}</div>
+      <div class="muted" style="font-size:12.5px;margin-top:10px">Процент — конверсия из предыдущего этапа. Итоговая конверсия в выход: <b>${Math.round(reached[st.length-1]/top*100)}%</b>. Отказов: ${va.filter(a=>a.stage===REJECT).length}.</div>`:'<div class="muted">Нет кандидатов за период.</div>'}</div>
+    <div class="panel"><h3>Источники кандидатов</h3>${srcRows.length?`<table class="mini"><tr><th>Источник</th><th class="r">Откликов</th><th class="r">Вышли</th><th class="r">Конверсия</th></tr>${srcRows.map(([s,x])=>`<tr><td>${esc(s)}</td><td class="r"><span class="bar-in" style="width:${Math.round(x.n/Math.max(1,srcRows[0][1].n)*60)}px"></span>${x.n}</td><td class="r">${x.h}</td><td class="r">${x.n?Math.round(x.h/x.n*100)+"%":"—"}</td></tr>`).join("")}</table>`:'<div class="muted">Нет данных</div>'}</div>
+    <div class="panel"><h3>Причины отказов</h3>${rrRows.length?`<table class="mini">${rrRows.map(([r,n])=>`<tr><td>${esc(r)}</td><td class="r">${n}</td><td class="r muted">${Math.round(n/rej.length*100)}%</td></tr>`).join("")}</table>`:'<div class="muted">Отказов нет</div>'}</div>
+    <div class="panel"><h3>Новые кандидаты по неделям</h3><div class="weeks">${wk.map(w=>`<div><span>${w.n||""}</span><i style="height:${w.n/wmax*100}%"></i><span>${w.l}</span></div>`).join("")}</div></div>
+    <div class="panel"><h3>Открытые вакансии</h3>${vRows.length?`<table class="mini"><tr><th>Вакансия</th><th class="r">Всего</th><th class="r">В работе</th><th class="r">Вышли</th><th class="r">Дней</th></tr>${vRows.map(x=>`<tr><td>${esc(x.t)}</td><td class="r">${x.n}</td><td class="r">${x.act}</td><td class="r">${x.h}</td><td class="r">${x.d}</td></tr>`).join("")}</table>`:'<div class="muted">Нет открытых вакансий</div>'}</div>
+  </div>`;
+  return shell("Аналитика","",body,"an");
+}
+
+/* ================= КАЛЕНДАРЬ ВСТРЕЧ ================= */
+const ROLE_SEED=[["Рекрутер","#FF5B00"],["Коммерческий директор","#141414"],["Руководитель отдела продаж","#8A8A8A"],["Генеральный директор","#C24400"]];
+const IV_COLORS=["#FF5B00","#141414","#8A8A8A","#C24400","#FF9A5C","#4D4D4D","#B8B8B8"];
+const MEET_TYPES=["Собеседование","Телефонный скрининг","Финальное интервью","Встреча","Другое"];
+const MEET_STATUS=[["planned","Запланирована"],["done","Проведена"],["noshow","Не пришёл"],["cancelled","Отменена"]];
+const DUR=[15,30,45,60,90,120];
+const DOW=["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
+const H0=8,H1=21,HH=52;
+const pad=n=>String(n).padStart(2,"0");
+const toLocalInput=d=>{d=new Date(d);return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`};
+const startOfWeek=d=>{d=new Date(d);d.setHours(0,0,0,0);d.setDate(d.getDate()-(d.getDay()+6)%7);return d};
+const addDays=(d,n)=>{d=new Date(d);d.setDate(d.getDate()+n);return d};
+const sameDay=(a,b)=>{a=new Date(a);b=new Date(b);return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate()};
+const hm=d=>new Date(d).toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
+const dayLabel=d=>new Date(d).toLocaleDateString("ru-RU",{weekday:"long",day:"numeric",month:"long"});
+const meetEnd=m=>new Date(new Date(m.starts_at).getTime()+(m.duration||60)*60000);
+const meetTitle=m=>{const c=cand(m.candidate_id);return c?c.fio:(m.title||m.kind||"Встреча")};
+const ivById=id=>byId(S.interviewers,id);
+const ivName=x=>x?(x.name&&x.name.trim()?x.name.trim():x.role||"Сотрудник"):"";
+const ivFull=x=>x?(x.name&&x.name.trim()?`${x.name.trim()}, ${x.role||""}`.replace(/, $/,""):x.role||"Сотрудник"):"";
+const activeIvs=()=>S.interviewers.filter(x=>x.active!==false).sort((a,b)=>(a.sort||0)-(b.sort||0));
+const ivDot=(x,sz=20)=>`<span class="ivd" style="width:${sz}px;height:${sz}px;background:${esc(x?.color||"#8A8A8A")}" title="${esc(ivFull(x))}">${esc(initials(ivName(x)))}</span>`;
+const upcomingOf=cid=>S.meetings.filter(m=>m.candidate_id===cid&&m.status==="planned"&&meetEnd(m)>new Date()).sort((a,b)=>new Date(a.starts_at)-new Date(b.starts_at));
+const fmtMeetShort=m=>new Date(m.starts_at).toLocaleString("ru-RU",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
+
+async function seedInterviewers(){
+  if(S.interviewers.length||S.calError)return;
+  try{if(localStorage.getItem("naim-iv-seeded-"+store.kind))return}catch(e){}
+  for(let i=0;i<ROLE_SEED.length;i++){try{S.interviewers.push(await store.insert("interviewers",{name:"",role:ROLE_SEED[i][0],color:ROLE_SEED[i][1],active:true,sort:i+1}))}catch(e){break}}
+  try{localStorage.setItem("naim-iv-seeded-"+store.kind,"1")}catch(e){}
+}
+
+function conflictsFor(m){
+  const s=new Date(m.starts_at),e=meetEnd(m);const out=[];
+  for(const o of S.meetings){if(o.id===m.id||o.status==="cancelled")continue;const os=new Date(o.starts_at),oe=meetEnd(o);if(os<e&&oe>s){const common=(o.interviewer_ids||[]).filter(i=>(m.interviewer_ids||[]).includes(i));if(common.length)out.push({o,common})}}
+  return out;
+}
+
+function meetingModal(m,preset={}){
+  const isNew=!m;
+  m=m||{kind:"Собеседование",format:"online",duration:60,status:"planned",interviewer_ids:preset.interviewer_ids||[],candidate_id:preset.candidate_id||"",vacancy_id:preset.vacancy_id||"",starts_at:preset.starts_at||(()=>{const d=new Date();d.setMinutes(0,0,0);d.setHours(d.getHours()+1);return d.toISOString()})()};
+  let sel=new Set(m.interviewer_ids||[]);let fmt=m.format||"online";
+  const cands=[...S.candidates].sort((a,b)=>a.fio.localeCompare(b.fio,"ru"));
+  const md=openModal(`<div class="mh"><h3>${isNew?"Новая встреча":"Встреча"}</h3><button class="btn-g" data-x aria-label="Закрыть">${ic("x")}</button></div>
+  <form class="mb grid" id="mf" autocomplete="off">
+    <div class="fl c3"><label>Тип</label><select name="kind">${MEET_TYPES.map(t=>`<option ${m.kind===t?"selected":""}>${t}</option>`).join("")}</select></div>
+    <div class="fl c3"><label>Статус</label><select name="status">${MEET_STATUS.map(([k,l])=>`<option value="${k}" ${m.status===k?"selected":""}>${l}</option>`).join("")}</select></div>
+    <div class="fl c3"><label>Кандидат</label><select name="candidate_id"><option value="">Без кандидата</option>${cands.map(c=>`<option value="${c.id}" ${m.candidate_id===c.id?"selected":""}>${esc(c.fio)}</option>`).join("")}</select></div>
+    <div class="fl c3"><label>Вакансия</label><select name="vacancy_id"></select></div>
+    <div class="fl c6" id="mtw"><label>Название (если встреча без кандидата)</label><input name="title" value="${esc(m.title)}" placeholder="Например, планёрка по найму"></div>
+    <div class="fl c3"><label>Дата и время</label><input name="starts_at" type="datetime-local" step="300" required value="${toLocalInput(m.starts_at)}"></div>
+    <div class="fl c3"><label>Длительность</label><select name="duration">${DUR.map(d=>`<option value="${d}" ${+m.duration===d?"selected":""}>${d<60?d+" мин":d%60?Math.floor(d/60)+" ч "+d%60+" мин":d/60+" ч"}</option>`).join("")}</select></div>
+    <div class="fl c6"><label>Формат</label><div class="seg fmt-seg"><button type="button" data-fmt="online">${ic("video")}Онлайн</button><button type="button" data-fmt="offline">${ic("pin")}Офлайн</button></div></div>
+    <div class="fl c6" id="wLink"><label>Ссылка на встречу</label><input name="link" type="url" value="${esc(m.link)}" placeholder="Телемост, Zoom, Google Meet…"></div>
+    <div class="fl c6" id="wLoc"><label>Адрес / переговорная</label><input name="location" value="${esc(m.location)}" placeholder="Офис, переговорная 3"></div>
+    <div class="fl c6"><label>Кто проводит</label><div class="ivpick" id="ivpick"></div><div id="mconf" class="mconf"></div></div>
+    <div class="fl c6"><label>Заметки и вопросы к встрече</label><textarea name="notes" rows="3">${esc(m.notes)}</textarea></div>
+    <div class="fl c6" id="wRes"><label>Итог встречи</label><textarea name="result" rows="2" placeholder="Впечатление, решение, следующий шаг">${esc(m.result)}</textarea></div>
+  </form>
+  <div class="mf">${isNew?"":`<button class="btn-d" data-del style="margin-right:auto">${ic("trash")}Удалить</button><button data-ics title="Скачать для Outlook / Google / Яндекс Календаря">${ic("down")}.ics</button>`}<button data-x>Отмена</button><button class="btn-p" data-save>${isNew?"Назначить":"Сохранить"}</button></div>`);
+  const f=$("#mf");
+  const drawVacs=()=>{const cid=f.candidate_id.value;const ids=cid?appsOfCand(cid).map(a=>a.vacancy_id):[];const list=cid&&ids.length?S.vacancies.filter(v=>ids.includes(v.id)):S.vacancies.filter(v=>v.status!=="closed"||v.id===m.vacancy_id);
+    const cur=f.vacancy_id.value||m.vacancy_id||(ids.length===1?ids[0]:"");f.vacancy_id.innerHTML=`<option value="">Не выбрана</option>`+list.map(v=>`<option value="${v.id}" ${cur===v.id?"selected":""}>${esc(v.title)}</option>`).join("");
+    $("#mtw").style.display=cid?"none":""};
+  const drawFmt=()=>{$$("[data-fmt]",md).forEach(b=>b.classList.toggle("on",b.dataset.fmt===fmt));$("#wLink").style.display=fmt==="online"?"":"none";$("#wLoc").style.display=fmt==="offline"?"":"none"};
+  const drawRes=()=>{$("#wRes").style.display=f.status.value==="planned"&&isNew?"none":""};
+  const drawIv=()=>{const ivs=activeIvs();$("#ivpick").innerHTML=ivs.map(x=>`<button type="button" class="ivchip ${sel.has(x.id)?"on":""}" data-iv="${x.id}">${ivDot(x,22)}<span><b>${esc(ivName(x))}</b>${x.name?`<small>${esc(x.role||"")}</small>`:""}</span>${sel.has(x.id)?ic("check"):""}</button>`).join("")+`<button type="button" class="ivchip add" id="ivAdd">${ic("plus")}Сотрудник</button>`;
+    checkConf()};
+  const checkConf=()=>{const probe={id:m.id,starts_at:f.starts_at.value?new Date(f.starts_at.value).toISOString():m.starts_at,duration:+f.duration.value,interviewer_ids:[...sel]};const cs=conflictsFor(probe);
+    $("#mconf").innerHTML=cs.length?`${ic("warn")}<span>Пересечение: ${cs.map(({o,common})=>`${common.map(i=>esc(ivName(ivById(i)))).join(", ")} — «${esc(meetTitle(o))}» ${hm(o.starts_at)}–${hm(meetEnd(o))}`).join("; ")}</span>`:""};
+  drawVacs();drawFmt();drawRes();drawIv();
+  f.candidate_id.onchange=()=>{f.vacancy_id.value="";drawVacs()};f.status.onchange=drawRes;f.starts_at.onchange=checkConf;f.duration.onchange=checkConf;
+  $$("[data-fmt]",md).forEach(b=>b.onclick=()=>{fmt=b.dataset.fmt;drawFmt()});
+  $("#ivpick").onclick=e=>{if(e.target.closest("#ivAdd")){closeModal();interviewersModal(()=>meetingModal(isNew?null:m,{...preset,...readMeet(),interviewer_ids:[...sel]}));return}
+    const b=e.target.closest("[data-iv]");if(!b)return;const id=b.dataset.iv;sel.has(id)?sel.delete(id):sel.add(id);drawIv()};
+  md.querySelectorAll("[data-x]").forEach(b=>b.onclick=closeModal);
+  function readMeet(){return {kind:f.kind.value,status:f.status.value,candidate_id:f.candidate_id.value||null,vacancy_id:f.vacancy_id.value||null,title:f.candidate_id.value?null:(f.title.value.trim()||null),
+    starts_at:new Date(f.starts_at.value).toISOString(),duration:+f.duration.value,format:fmt,link:fmt==="online"?(f.link.value.trim()||null):null,location:fmt==="offline"?(f.location.value.trim()||null):null,
+    interviewer_ids:[...sel],notes:f.notes.value.trim()||null,result:f.result.value.trim()||null}}
+  md.querySelector("[data-save]").onclick=async e=>{
+    if(!f.starts_at.value){f.starts_at.focus();return}
+    const d=readMeet();if(!d.candidate_id&&!d.title){d.title=d.kind}
+    const btn=e.target.closest("button");btn.disabled=true;
+    try{
+      const ivs=d.interviewer_ids.map(i=>ivName(ivById(i))).filter(Boolean).join(", ");
+      const where=d.format==="online"?"онлайн":"офлайн"+(d.location?`, ${d.location}`:"");
+      if(isNew){const row=await store.insert("meetings",d);S.meetings.push(row);
+        if(d.candidate_id)await addEvent(d.candidate_id,"meeting",`Назначено: ${d.kind.toLowerCase()} ${fmtMeetShort(d)}, ${where}${ivs?` · проводит: ${ivs}`:""}`,{meeting_id:row.id},d.vacancy_id);
+        toast("Встреча назначена")}
+      else{const prev=m;const row=await store.update("meetings",m.id,d);replace(S.meetings,row);
+        if(d.candidate_id){
+          if(prev.status!==d.status){const lbl=Object.fromEntries(MEET_STATUS)[d.status];await addEvent(d.candidate_id,"meeting",`${d.kind}: ${lbl.toLowerCase()}${d.result?`\nИтог: ${d.result}`:""}`,{meeting_id:m.id},d.vacancy_id)}
+          else if(prev.starts_at!==d.starts_at)await addEvent(d.candidate_id,"meeting",`${d.kind} перенесено на ${fmtMeetShort(d)}`,{meeting_id:m.id},d.vacancy_id);
+          else if((prev.result||"")!==(d.result||"")&&d.result)await addEvent(d.candidate_id,"meeting",`Итог встречи: ${d.result}`,{meeting_id:m.id},d.vacancy_id);
+        }
+        toast("Встреча сохранена")}
+      closeModal();render();
+    }catch(err){btn.disabled=false;toast(/relation|does not exist|schema cache/i.test(err.message)?"Обнови базу: выполни schema.sql в Supabase":"Ошибка: "+err.message)}
+  };
+  const del=md.querySelector("[data-del]");
+  if(del)del.onclick=async()=>{closeModal();if(!(await confirmBox("Удалить встречу?",`«${meetTitle(m)}», ${fmtMeetShort(m)}`)))return;
+    try{await store.remove("meetings",m.id);S.meetings=S.meetings.filter(x=>x.id!==m.id);if(m.candidate_id)await addEvent(m.candidate_id,"meeting",`Встреча ${fmtMeetShort(m)} удалена`,null,m.vacancy_id);toast("Встреча удалена");render()}catch(e){toast("Ошибка: "+e.message)}};
+  const icsB=md.querySelector("[data-ics]");if(icsB)icsB.onclick=()=>downloadIcs(m);
+}
+
+function downloadIcs(m){
+  const z=d=>new Date(d).toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,"");
+  const e=s=>String(s||"").replace(/\\/g,"\\\\").replace(/\n/g,"\\n").replace(/[,;]/g,c=>"\\"+c);
+  const c=cand(m.candidate_id),v=vac(m.vacancy_id);
+  const desc=[c?`Кандидат: ${c.fio}${c.phone?", "+c.phone:""}`:"",v?`Вакансия: ${v.title}`:"",m.link?`Ссылка: ${m.link}`:"",(m.interviewer_ids||[]).length?`Проводят: ${m.interviewer_ids.map(i=>ivFull(ivById(i))).join("; ")}`:"",m.notes||""].filter(Boolean).join("\n");
+  const ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Naim//RU","BEGIN:VEVENT",`UID:${m.id}@naim`,`DTSTAMP:${z(new Date())}`,`DTSTART:${z(m.starts_at)}`,`DTEND:${z(meetEnd(m))}`,`SUMMARY:${e(`${m.kind}: ${meetTitle(m)}`)}`,`DESCRIPTION:${e(desc)}`,m.format==="offline"&&m.location?`LOCATION:${e(m.location)}`:m.link?`LOCATION:${e(m.link)}`:"",m.link?`URL:${m.link}`:"","END:VEVENT","END:VCALENDAR"].filter(Boolean).join("\r\n");
+  download(ics,`vstrecha_${toLocalInput(m.starts_at).replace(/[T:]/g,"-")}.ics`,"text/calendar");
+}
+
+function interviewersModal(after){
+  const rows=activeIvs().map(x=>({...x}));
+  const md=openModal(`<div class="mh"><h3>Сотрудники, проводящие встречи</h3><button class="btn-g" data-x aria-label="Закрыть">${ic("x")}</button></div>
+  <div class="mb"><div class="muted" style="font-size:13px;margin-bottom:12px">Впиши имена и при необходимости должности. Цвет — нажми на кружок.</div><div id="ivrows" class="ivrows"></div>
+  <button type="button" id="ivNew" style="margin-top:10px">${ic("plus")}Добавить сотрудника</button></div>
+  <div class="mf"><button data-x>Отмена</button><button class="btn-p" data-save>Сохранить</button></div>`);
+  const draw=()=>{$("#ivrows").innerHTML=rows.map((x,i)=>x._del?"":`<div class="ivrow" data-i="${i}"><button type="button" class="ivd big" data-color="${i}" style="background:${esc(x.color)}" title="Сменить цвет">${esc(initials(x.name||x.role))}</button><input data-k="name" data-i="${i}" placeholder="Имя и фамилия" value="${esc(x.name)}"><input data-k="role" data-i="${i}" placeholder="Должность" value="${esc(x.role)}"><button type="button" class="btn-g btn-d" data-rm="${i}" title="Удалить">${ic("trash")}</button></div>`).join("")};
+  draw();
+  $("#ivrows").oninput=e=>{const i=e.target.dataset.i;if(i==null)return;rows[i][e.target.dataset.k]=e.target.value;const dot=$(`[data-color="${i}"]`);if(dot)dot.textContent=initials(rows[i].name||rows[i].role)};
+  $("#ivrows").onclick=e=>{const c=e.target.closest("[data-color]");if(c){const x=rows[+c.dataset.color];x.color=IV_COLORS[(IV_COLORS.indexOf(x.color)+1)%IV_COLORS.length];c.style.background=x.color;return}
+    const r=e.target.closest("[data-rm]");if(r){rows[+r.dataset.rm]._del=true;draw()}};
+  $("#ivNew").onclick=()=>{rows.push({_new:true,name:"",role:"",color:IV_COLORS[rows.length%IV_COLORS.length],active:true,sort:rows.length+1});draw();$$("#ivrows input[data-k=name]").pop()?.focus()};
+  md.querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>{closeModal();after&&after()});
+  md.querySelector("[data-save]").onclick=async()=>{
+    try{let i=0;
+      for(const x of rows){i++;
+        if(x._new&&x._del)continue;
+        if(x._new){if(!x.name.trim()&&!x.role.trim())continue;S.interviewers.push(await store.insert("interviewers",{name:x.name.trim(),role:x.role.trim()||null,color:x.color,active:true,sort:i}))}
+        else if(x._del)replace(S.interviewers,await store.update("interviewers",x.id,{active:false}));
+        else{const o=ivById(x.id);if(o.name!==x.name||o.role!==x.role||o.color!==x.color||o.sort!==i)replace(S.interviewers,await store.update("interviewers",x.id,{name:x.name.trim(),role:x.role.trim()||null,color:x.color,sort:i}))}
+      }
+      closeModal();toast("Список сотрудников сохранён");if(after)after();else render();
+    }catch(e){toast(/relation|does not exist|schema cache/i.test(e.message)?"Обнови базу: выполни schema.sql в Supabase":"Ошибка: "+e.message)}
+  };
+}
+
+function viewCalendar(){
+  const C=UI.cal;const anchor=new Date(C.anchor);
+  const fil=m=>!C.iv||(m.interviewer_ids||[]).includes(C.iv);
+  const ms=S.meetings.filter(fil);
+  let label="",grid="";
+  const block=(m,extra="")=>{const ivs=(m.interviewer_ids||[]).map(ivById).filter(Boolean);const short=(m.duration||60)<=45;return `<div class="mt ${esc(m.format)} st-${esc(m.status)} ${short?"short":""}" data-m="${m.id}" ${extra} title="${esc(`${meetTitle(m)} · ${m.kind||""} · ${hm(m.starts_at)}–${hm(meetEnd(m))}`)}"><div class="mt-n">${esc(meetTitle(m))}</div><div class="mt-t">${ic(m.format==="online"?"video":"pin")}${hm(m.starts_at)}–${hm(meetEnd(m))}</div><div class="mt-k">${esc(m.kind||"")}</div><div class="mt-iv">${ivs.map(x=>ivDot(x,16)).join("")}</div></div>`};
+  if(C.view==="week"){
+    const ws=startOfWeek(anchor),days=[...Array(7)].map((_,i)=>addDays(ws,i)),we=addDays(ws,6);
+    label=`${ws.toLocaleDateString("ru-RU",{day:"numeric",month:ws.getMonth()===we.getMonth()?undefined:"long"})} – ${we.toLocaleDateString("ru-RU",{day:"numeric",month:"long",year:"numeric"})}`;
+    const now=new Date();
+    const cols=days.map(d=>{
+      const dm=ms.filter(m=>sameDay(m.starts_at,d)).sort((a,b)=>new Date(a.starts_at)-new Date(b.starts_at));
+      // раскладка пересечений по дорожкам
+      const lanes=[];const pos=new Map();let cluster=[],clusterEnd=0;
+      const flush=()=>{const n=Math.max(1,...cluster.map(m=>pos.get(m.id)+1));cluster.forEach(m=>pos.set(m.id+"n",n));cluster=[];lanes.length=0};
+      for(const m of dm){const s=new Date(m.starts_at).getTime(),e=meetEnd(m).getTime();if(cluster.length&&s>=clusterEnd)flush();let l=lanes.findIndex(t=>t<=s);if(l<0){l=lanes.length;lanes.push(e)}else lanes[l]=e;pos.set(m.id,l);cluster.push(m);clusterEnd=Math.max(clusterEnd,e)}
+      flush();
+      const blocks=dm.map(m=>{const s=new Date(m.starts_at);let top=((s.getHours()+s.getMinutes()/60)-H0)*HH;let h=(m.duration||60)/60*HH;if(top<0){h+=top;top=0}h=Math.max(22,Math.min(h,(H1-H0)*HH-top));const n=pos.get(m.id+"n")||1,l=pos.get(m.id)||0;
+        return block(m,`style="top:${top}px;height:${h-2}px;left:calc(${l/n*100}% + 2px);width:calc(${100/n}% - 4px)"`)}).join("");
+      const nl=sameDay(d,now)&&now.getHours()>=H0&&now.getHours()<H1?`<div class="nowline" style="top:${((now.getHours()+now.getMinutes()/60)-H0)*HH}px"></div>`:"";
+      return `<div class="wk-d ${sameDay(d,now)?"today":""} ${d.getDay()%6===0?"we":""}" data-day="${d.toISOString()}" style="height:${(H1-H0)*HH}px">${blocks}${nl}</div>`}).join("");
+    grid=`<div class="wk"><div class="wk-h"><div></div>${days.map(d=>`<div class="wk-dh ${sameDay(d,now)?"on":""}" data-goday="${d.toISOString()}"><span>${DOW[(d.getDay()+6)%7]}</span><b>${d.getDate()}</b></div>`).join("")}</div>
+    <div class="wk-b"><div class="wk-t">${[...Array(H1-H0)].map((_,i)=>`<div style="height:${HH}px">${pad(H0+i)}:00</div>`).join("")}</div>${cols}</div></div>`;
+  }
+  if(C.view==="month"){
+    const first=new Date(anchor.getFullYear(),anchor.getMonth(),1),gs=startOfWeek(first);
+    label=first.toLocaleDateString("ru-RU",{month:"long",year:"numeric"});label=label[0].toUpperCase()+label.slice(1);
+    const now=new Date();
+    grid=`<div class="mo"><div class="mo-h">${DOW.map(d=>`<div>${d}</div>`).join("")}</div><div class="mo-g">${[...Array(42)].map((_,i)=>{const d=addDays(gs,i);const dm=ms.filter(m=>sameDay(m.starts_at,d)).sort((a,b)=>new Date(a.starts_at)-new Date(b.starts_at));
+      return `<div class="mo-c ${d.getMonth()!==first.getMonth()?"out":""} ${sameDay(d,now)?"today":""}" data-day="${d.toISOString()}"><div class="mo-n">${d.getDate()}</div>${dm.slice(0,3).map(m=>`<div class="mo-i ${esc(m.format)} st-${esc(m.status)}" data-m="${m.id}"><b>${hm(m.starts_at)}</b> ${esc(meetTitle(m))}</div>`).join("")}${dm.length>3?`<div class="mo-more" data-goday="${d.toISOString()}">ещё ${dm.length-3}</div>`:""}</div>`}).join("")}</div></div>`;
+  }
+  if(C.view==="list"){
+    label="Ближайшие встречи";
+    const from=new Date();from.setHours(0,0,0,0);
+    const up=ms.filter(m=>new Date(m.starts_at)>=from).sort((a,b)=>new Date(a.starts_at)-new Date(b.starts_at));
+    const groups={};up.forEach(m=>{const k=new Date(m.starts_at).toDateString();(groups[k]=groups[k]||[]).push(m)});
+    grid=up.length?`<div class="ml">${Object.values(groups).map(g=>`<div class="ml-g"><div class="ml-d">${sameDay(g[0].starts_at,new Date())?"Сегодня, ":sameDay(g[0].starts_at,addDays(new Date(),1))?"Завтра, ":""}${dayLabel(g[0].starts_at)}</div>${g.map(m=>{const c=cand(m.candidate_id),v=vac(m.vacancy_id),ivs=(m.interviewer_ids||[]).map(ivById).filter(Boolean);
+      return `<div class="ml-r st-${esc(m.status)}" data-m="${m.id}"><div class="ml-t"><b>${hm(m.starts_at)}</b><span>${m.duration||60} мин</span></div><div class="ml-fm ${esc(m.format)}" title="${m.format==="online"?"Онлайн":"Офлайн"}">${ic(m.format==="online"?"video":"pin")}</div>
+      <div class="ml-m"><div class="ml-n">${esc(meetTitle(m))}${m.status!=="planned"?` <span class="chip ${m.status==="done"?"open":m.status==="cancelled"?"closed":"rej"}">${Object.fromEntries(MEET_STATUS)[m.status]}</span>`:""}</div><div class="muted" style="font-size:12.5px">${esc([m.kind,v?.title,m.format==="offline"?m.location:""].filter(Boolean).join(", "))}</div></div>
+      <div class="ml-iv">${ivs.map(x=>`<span class="ivtag">${ivDot(x,18)}${esc(ivName(x))}</span>`).join("")}</div>
+      <div class="ml-a">${m.format==="online"&&m.link?`<a class="btn-s btnlink" href="${esc(m.link)}" target="_blank" rel="noopener">${ic("ext")}Подключиться</a>`:""}${c?`<button class="btn-g btn-s" data-cand="${c.id}" title="Карточка кандидата">${ic("users")}</button>`:""}</div></div>`}).join("")}</div>`).join("")}</div>`
+      :`<div class="empty">${ic("cal")}<b>Встреч не запланировано</b><span>Назначьте собеседование — оно появится здесь и в карточке кандидата</span><div class="row"><button class="btn-p" id="newM2">${ic("plus")}Назначить встречу</button></div></div>`;
+  }
+  const ivs=activeIvs();
+  const warn=S.calError?`<div class="calwarn">${ic("warn")}Календарь недоступен: в базе нет таблиц встреч. Выполни обновлённый schema.sql в Supabase и обнови страницу.</div>`:"";
+  const body=`${warn}<div class="toolbar caltb"><div class="seg">${[["week","Неделя"],["month","Месяц"],["list","Список"]].map(([k,l])=>`<button data-cv="${k}" class="${C.view===k?"on":""}">${l}</button>`).join("")}</div>
+    ${C.view!=="list"?`<div class="calnav"><button class="btn-g" data-nav="-1" aria-label="Назад">${ic("left")}</button><button class="btn-s" data-nav="0">Сегодня</button><button class="btn-g" data-nav="1" aria-label="Вперёд">${ic("right")}</button></div>`:""}
+    <div class="callabel">${esc(label)}</div>
+    <div class="ivfilter"><button class="${!C.iv?"on":""}" data-ivf="">Все</button>${ivs.map(x=>`<button class="${C.iv===x.id?"on":""}" data-ivf="${x.id}" title="${esc(ivFull(x))}">${ivDot(x,18)}<span>${esc(ivName(x))}</span></button>`).join("")}</div></div>
+    ${grid}
+    <div class="legend"><span>${ic("video")}Онлайн</span><span>${ic("pin")}Офлайн</span><span class="lg-done">Проведена</span><span class="lg-cn">Отменена</span><span class="muted">Клик по пустому месту в неделе — новая встреча на это время</span></div>`;
+  return shell("Календарь",`<button id="ivBtn">${ic("users")}Сотрудники</button><button class="btn-p" id="newM">${ic("plus")}Встреча</button>`,body,"cal");
+}
+function wireCalendar(){
+  const C=UI.cal;const on=(id,ev,fn)=>{const e=$("#"+id);if(e)e[ev]=fn};
+  on("newM","onclick",()=>meetingModal(null,C.iv?{interviewer_ids:[C.iv]}:{}));on("newM2","onclick",()=>meetingModal());on("ivBtn","onclick",()=>interviewersModal());
+  $$("[data-cv]").forEach(b=>b.onclick=()=>{C.view=b.dataset.cv;render()});
+  $$("[data-nav]").forEach(b=>b.onclick=()=>{const n=+b.dataset.nav;const a=new Date(C.anchor);if(!n)C.anchor=Date.now();else if(C.view==="week")C.anchor=addDays(a,7*n).getTime();else{a.setDate(1);a.setMonth(a.getMonth()+n);C.anchor=a.getTime()}render()});
+  $$("[data-ivf]").forEach(b=>b.onclick=()=>{C.iv=b.dataset.ivf;render()});
+  $$("[data-goday]").forEach(b=>b.onclick=e=>{e.stopPropagation();C.anchor=new Date(b.dataset.goday).getTime();C.view="week";render()});
+  $$("[data-m]").forEach(b=>b.onclick=e=>{e.stopPropagation();meetingModal(byId(S.meetings,b.dataset.m))});
+  $$("[data-cand]").forEach(b=>b.onclick=e=>{e.stopPropagation();openDrawer(b.dataset.cand)});
+  $$(".wk-d").forEach(col=>col.onclick=e=>{if(e.target.closest("[data-m]"))return;const r=col.getBoundingClientRect();const mins=Math.max(0,Math.round(((e.clientY-r.top)/HH*60)/30)*30);const d=new Date(col.dataset.day);d.setHours(H0,0,0,0);d.setMinutes(mins);meetingModal(null,{starts_at:d.toISOString(),...(C.iv?{interviewer_ids:[C.iv]}:{})})});
+  $$(".mo-c").forEach(c=>c.onclick=e=>{if(e.target.closest("[data-m],[data-goday]"))return;const d=new Date(c.dataset.day);d.setHours(10,0,0,0);meetingModal(null,{starts_at:d.toISOString()})});
+}
+
+/* ================= РЕНДЕР И СОБЫТИЯ ================= */
+function route(){const h=location.hash.slice(1)||"vacancies";if(h.startsWith("vacancy-"))return {v:"board",id:h.slice(8)};return {v:["vacancies","candidates","analytics","calendar"].includes(h)?h:"vacancies"}}
+function render(){
+  if(!S.loaded)return;
+  const r=route();const sy=window.scrollY;const bs=$(".board")?.scrollLeft;
+  const focusId=document.activeElement?.id,selS=document.activeElement?.selectionStart;
+  $("#root").innerHTML=r.v==="board"?viewBoard(r.id):r.v==="candidates"?viewCandidates():r.v==="analytics"?viewAnalytics():r.v==="calendar"?viewCalendar():viewVacancies();
+  if(bs&&$(".board"))$(".board").scrollLeft=bs;window.scrollTo(0,sy);
+  if(focusId&&$("#"+focusId)){const el=$("#"+focusId);el.focus();if(selS!=null&&el.setSelectionRange)try{el.setSelectionRange(selS,selS)}catch(e){}}
+  wire(r);
+  if(UI.drawerCand)renderDrawer();
+}
+function wire(r){
+  const on=(id,ev,fn)=>{const e=$("#"+id);if(e)e[ev]=fn};
+  on("logout","onclick",async()=>{await store.signOut();location.reload()});
+  on("exportBtn","onclick",exportJson);
+  on("themeBtn","onclick",()=>{const d=document.documentElement.dataset.theme==="dark"?"light":"dark";document.documentElement.dataset.theme=d;try{localStorage.setItem("naim-theme",d)}catch(e){}render()});
+  on("nv","onclick",()=>vacancyModal());on("nvPdf","onclick",()=>vacancyModal(null,true));on("nv2","onclick",()=>vacancyModal());
+  $$("[data-vf]").forEach(b=>b.onclick=()=>{UI.vacFilter=b.dataset.vf;render()});
+  $$(".vcard").forEach(c=>c.onclick=()=>location.hash="#vacancy-"+c.dataset.v);
+  if(r.v==="board"){
+    const vid=r.id;
+    on("editV","onclick",()=>vacancyModal(vac(vid)));on("pickB","onclick",()=>pickFromBaseModal(vid));on("bulkB","onclick",()=>bulkModal(vid));on("newC","onclick",()=>newCandidateModal(vid));
+    on("bq","oninput",e=>{UI.boardQ=e.target.value;render()});
+    $$("[data-vdoc]").forEach(b=>b.onclick=async()=>{try{window.open(await store.fileUrl(vac(vid).files[+b.dataset.vdoc].path),"_blank")}catch(e){toast(e.message)}});
+    $$(".kc").forEach(k=>{k.onclick=()=>openDrawer(k.dataset.c);k.ondragstart=e=>{e.dataTransfer.setData("text/plain",k.dataset.app);k.classList.add("drag")};k.ondragend=()=>k.classList.remove("drag")});
+    $$(".col").forEach(col=>{col.ondragover=e=>{e.preventDefault();col.classList.add("over")};col.ondragleave=()=>col.classList.remove("over");
+      col.ondrop=async e=>{e.preventDefault();col.classList.remove("over");const id=e.dataTransfer.getData("text/plain");const a=byId(S.apps,id);if(!a)return;const to=col.dataset.stage;if(a.stage===to)return;
+        let reason=null;if(to===REJECT){reason=await rejectBox(cand(a.candidate_id)?.fio);if(reason===null)return}
+        try{await moveApp(id,to,reason);render()}catch(err){toast("Ошибка: "+err.message)}}});
+  }
+  if(r.v==="candidates"){
+    on("newC","onclick",()=>newCandidateModal());on("nc2","onclick",()=>newCandidateModal());on("bulkC","onclick",()=>bulkModal());on("bulk2","onclick",()=>bulkModal());on("csvC","onclick",exportCsv);
+    on("cq","oninput",e=>{UI.candQ=e.target.value;render()});
+    [["fg","grade"],["fs","source"],["fc","city"],["ft","tag"],["fv","vac"]].forEach(([id,k])=>on(id,"onchange",e=>{UI.candF[k]=e.target.value;render()}));
+    $$("[data-sort]").forEach(th=>th.onclick=()=>{const k=th.dataset.sort;UI.candSort=UI.candSort.k===k?{k,d:-UI.candSort.d}:{k,d:k==="fio"||k==="city"?1:-1};render()});
+    $$("tr[data-c]").forEach(tr=>tr.onclick=()=>openDrawer(tr.dataset.c));
+  }
+  if(r.v==="calendar")wireCalendar();
+  if(r.v==="analytics"){
+    $$("[data-per]").forEach(b=>b.onclick=()=>{UI.anPeriod=b.dataset.per;render()});
+    on("anv","onchange",e=>{UI.anVac=e.target.value;render()});
+  }
+}
+window.addEventListener("hashchange",()=>{UI.boardQ="";render()});
+
+function exportCsv(){
+  const head=["ФИО","Возраст","Должность","Грейд","Опыт","Ожидания","Навыки","Метки","Телефон","Email","Telegram","Город","Формат","Источник","Резюме","Оценка","Вакансии","Заметки","Добавлен"];
+  const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+  const rows=S.candidates.map(c=>[c.fio,c.age,c.position,c.grade,c.experience,c.salary,(c.skills||[]).join(", "),(c.tags||[]).join(", "),c.phone,c.email,c.telegram,c.city,c.work_format,c.source,c.resume_url,c.rating,appsOfCand(c.id).map(a=>`${vac(a.vacancy_id)?.title}: ${a.stage}`).join("; "),c.notes,fmtD(c.created_at)].map(q).join(";"));
+  download("﻿"+[head.map(q).join(";"),...rows].join("\n"),`kandidaty_${new Date().toISOString().slice(0,10)}.csv`,"text/csv");
+}
+function exportJson(){download(JSON.stringify({vacancies:S.vacancies,candidates:S.candidates,applications:S.apps,events:S.events},null,1),`naim_backup_${new Date().toISOString().slice(0,10)}.json`,"application/json")}
+function download(text,name,type){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+
+/* ================= ВХОД И ЗАПУСК ================= */
+function loginView(err){
+  $("#root").innerHTML=`<div class="login"><div class="l"><div class="logo" style="padding:0">${'<i>'+ic("check")+'</i>'}${esc(CFG.COMPANY||"Найм")}</div><h2>Кандидаты, вакансии и воронка <span>в одном месте</span></h2><div style="color:#777;font-size:13px">Внутренняя система найма</div></div><div class="r"><form id="lf"><h3>Вход</h3><div class="muted" style="margin-top:-6px">Доступ выдаёт администратор</div>
+  <div class="fl"><label>Email</label><input name="email" type="email" required autocomplete="username"></div>
+  <div class="fl"><label>Пароль</label><input name="password" type="password" required autocomplete="current-password"></div>
+  ${err?`<div style="color:var(--red);font-size:13px">${esc(err)}</div>`:""}<button class="btn-p" type="submit" style="justify-content:center;padding:10px">Войти</button></form></div></div>`;
+  $("#lf").onsubmit=async e=>{e.preventDefault();const f=e.target;const b=$("button",f);b.disabled=true;b.textContent="Вхожу…";
+    try{await store.signIn(f.email.value.trim(),f.password.value);start()}catch(er){loginView(/invalid/i.test(er.message)?"Неверный email или пароль":er.message)}};
+}
+async function start(){
+  try{
+    S.user=await store.user();
+    if(!S.user){loginView();return}
+    $("#root").innerHTML='<div class="loading"><div class="loader"></div></div>';
+    await loadAll();render();
+  }catch(e){console.error(e);$("#root").innerHTML=`<div class="loading"><div style="max-width:520px;text-align:center">Не удалось загрузить данные: ${esc(e.message)}<br><br><span class="muted">${store.kind==="supabase"?"Проверь SUPABASE_URL и ключ в настройках и что schema.sql выполнен.":"Демо-режим хранит данные в браузере. Если не помогло — открой файл в Chrome или Яндекс Браузере."}</span><br><br><button onclick="location.reload()">Обновить</button></div></div>`}
+}
+// обновлять данные при возврате на вкладку (чтобы видеть изменения коллег)
+let lastFocusLoad=Date.now();
+window.addEventListener("focus",async()=>{if(store.kind!=="supabase"||!S.loaded||Date.now()-lastFocusLoad<30000||$("#modalBg").classList.contains("open"))return;lastFocusLoad=Date.now();try{await loadAll();if(!$("#drawer").contains(document.activeElement))render()}catch(e){}});
+start();
+</script>
+</body>
+</html>
